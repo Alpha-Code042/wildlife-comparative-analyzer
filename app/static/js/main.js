@@ -1,0 +1,1 @@
+console.log("Wildlife Comparative Analyzer loaded.");

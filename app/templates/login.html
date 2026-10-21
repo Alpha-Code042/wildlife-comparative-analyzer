@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Wildlife Comparative Analyzer</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+    <header>
+        <h1>Wildlife Comparative Analyzer</h1>
+        <p>Sign in to access your workspace</p>
+    </header>
+
+    <main>
+        <section class="welcome">
+
+            <h2>Welcome Back</h2>
+
+            <p>
+                Log in to continue analyzing wildlife images
+                and videos.
+            </p>
+
+            <form method="POST" action="{{ url_for('main.login') }}">
+
+                <label for="email">Email Address</label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        {% if category == "error" %}
+                            <div class="error-message" role="alert">
+                                {{ message }}
+                            </div>
+                        {% elif category == "success" %}
+                            <div class="success-message" role="status">
+                                {{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
+
+                <label for="password">Password</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <button type="submit">Login</button>
+
+            </form>
+
+            <p style="margin-top: 20px; margin-bottom: 0;">
+                Don't have an account?
+                <a href="{{ url_for('main.register') }}">
+                    Create an account
+                </a>
+            </p>
+
+        </section>
+    </main>
+
+</body>
+</html>

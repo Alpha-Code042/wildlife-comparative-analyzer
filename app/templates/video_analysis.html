@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Video Analysis | Wildlife Comparative Analyzer</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+    <style>
+        .analysis-page {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .analysis-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .analysis-card h2 {
+            margin-top: 0;
+            margin-bottom: 18px;
+        }
+
+        .analysis-file-name {
+            color: #666;
+            margin-top: -8px;
+            margin-bottom: 0;
+            word-break: break-word;
+        }
+
+        .video-container {
+            width: 100%;
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-container video {
+            display: block;
+            width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+            background: #111;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(180px, 1fr)
+            );
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e8;
+            border-radius: 8px;
+            padding: 18px;
+        }
+
+        .stat-label {
+            display: block;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 7px;
+        }
+
+        .stat-value {
+            display: block;
+            color: #212529;
+            font-size: 21px;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .detection-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        .detection-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 13px 15px;
+            background: #f8f9fa;
+            border: 1px solid #e1e5e8;
+            border-radius: 7px;
+        }
+
+        .detection-name {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .detection-count {
+            background: #218838;
+            color: #ffffff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .no-detections {
+            padding: 18px;
+            background: #f8f9fa;
+            border-radius: 7px;
+            color: #666;
+            margin: 0;
+        }
+
+        .analysis-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .analysis-actions a {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .back-dashboard-link {
+            background-color: #218838;
+            color: #ffffff;
+        }
+
+        .back-dashboard-link:hover {
+            background-color: #176b2c;
+        }
+
+        .original-media-link {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+        .original-media-link:hover {
+            background-color: #d6d9dc;
+        }
+
+        .analysis-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 600px) {
+            .analysis-card {
+                padding: 18px;
+            }
+
+            .detection-item {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .analysis-actions {
+                flex-direction: column;
+            }
+
+            .analysis-actions a {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Wildlife Comparative Analyzer</h1>
+        <p>Your wildlife computer vision workspace</p>
+    </header>
+
+    <main>
+        <section class="dashboard analysis-page">
+
+            <!-- Page Introduction -->
+            <div class="dashboard-card">
+
+                <h2>Video Analysis Results</h2>
+
+                <p class="analysis-file-name">
+                    <strong>File:</strong>
+                    {{ analysis.filename }}
+                </p>
+
+            </div>
+
+
+            <!-- Processed Video -->
+            <div class="analysis-card">
+
+                <h2>Processed Video</h2>
+
+                <div class="video-container">
+
+                    <video
+                        controls
+                        preload="metadata"
+                    >
+                        <source
+                            src="{{ video_url }}"
+                            type="video/mp4"
+                        >
+
+                        Your browser does not support
+                        HTML5 video playback.
+                    </video>
+
+                </div>
+
+            </div>
+
+
+            <!-- Video Information -->
+            <div class="analysis-card">
+
+                <h2>Video Information</h2>
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Resolution
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.width }} × {{ analysis.height }}
+                        </span>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Original FPS
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.fps }}
+                        </span>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Total Frames
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.frame_count }}
+                        </span>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Duration
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.duration_seconds }} sec
+                        </span>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Processed Frames
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.processed_frames }}
+                        </span>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Processing Time
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.processing_time_seconds }} sec
+                        </span>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Processing FPS
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.processing_fps }}
+                        </span>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <span class="stat-label">
+                            Total Detections
+                        </span>
+
+                        <span class="stat-value">
+                            {{ analysis.total_detections }}
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Detected Animals -->
+            <div class="analysis-card">
+
+                <h2>Detected Animals</h2>
+
+                {% if analysis.class_counts %}
+
+                    <ul class="detection-list">
+
+                        {% for class_name, count in analysis.class_counts.items() %}
+
+                            <li class="detection-item">
+
+                                <span class="detection-name">
+                                    {{ class_name|capitalize }}
+                                </span>
+
+                                <span class="detection-count">
+                                    {{ count }} detection(s)
+                                </span>
+
+                            </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                {% else %}
+
+                    <p class="no-detections">
+                        No supported animal classes
+                        were detected in the video.
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- Actions -->
+            <div class="dashboard-card">
+
+                <div class="analysis-actions">
+
+                    <a
+                        class="back-dashboard-link"
+                        href="{{ url_for('main.dashboard') }}"
+                    >
+                        Back to Dashboard
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+    </main>
+
+</body>
+</html>

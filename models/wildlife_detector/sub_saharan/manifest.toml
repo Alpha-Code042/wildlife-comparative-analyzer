@@ -1,0 +1,21 @@
+[model]
+id = "sub_saharan"
+format = "onnx"
+file = "1/model.onnx"
+
+[preprocessing]
+method = "letterbox"
+input_size = [640, 480]
+layout = "nchw"
+normalization = "unit"
+
+[inference]
+strategy = "single"
+
+[postprocessing]
+method = "yolo_e2e"
+confidence_threshold = 0.2
+
+[labels]
+file = "labels.txt"
+format = "name_index_csv"

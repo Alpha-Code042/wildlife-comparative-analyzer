@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Upload Media | Wildlife Comparative Analyzer</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+    <header>
+        <h1>Wildlife Comparative Analyzer</h1>
+        <p>Upload wildlife images and videos for analysis</p>
+    </header>
+
+    <main>
+        <section class="welcome">
+
+            <h2>Upload Wildlife Media</h2>
+
+            <p>
+                Select an image or video from your computer.
+                Your uploaded media will be saved for later processing.
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div
+                        class="{{ 'error-message' if category == 'error' else 'success-message' }}"
+                        role="{{ 'alert' if category == 'error' else 'status' }}"
+                    >
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endwith %}
+
+            <form
+                method="POST"
+                action="{{ url_for('main.upload_media') }}"
+                enctype="multipart/form-data"
+            >
+
+                <label for="media_file">Choose an image or video</label>
+
+                <input
+                    type="file"
+                    id="media_file"
+                    name="media_file"
+                    accept=".jpg,.jpeg,.png,.webp,.mp4,.avi,.mov,.mkv,.webm"
+                    required
+                >
+
+                <p class="upload-hint">
+                    Supported formats: JPG, JPEG, PNG, WEBP, MP4,
+                    AVI, MOV, MKV and WEBM.
+                </p>
+
+                <p class="upload-hint">
+                    Maximum request size: 100 MB.
+                </p>
+
+                <button type="submit">
+                    Upload Media
+                </button>
+
+            </form>
+
+            <p class="back-link">
+                <a href="{{ url_for('main.dashboard') }}">
+                    Back to Dashboard
+                </a>
+            </p>
+
+        </section>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+uploads/
+results/
+instance/
+.vscode/
+database/*.db
+models/wildlife_detector/model.onnx

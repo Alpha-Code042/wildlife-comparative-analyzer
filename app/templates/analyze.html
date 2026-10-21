@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Image Analysis | Wildlife Comparative Analyzer</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f4f7f5;
+        color: #25352c;
+      }
+
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding: 18px 5%;
+        background: #173f2b;
+        color: white;
+      }
+
+      .navbar h2 {
+        margin: 0;
+        font-size: 21px;
+      }
+
+      .navbar-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+      }
+
+      .navbar a {
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .navbar a:hover {
+        color: #a7e8b5;
+      }
+
+      .analysis-page {
+        max-width: 1350px;
+        width: 100%;
+        min-height: calc(100vh - 70px);
+        margin: 0 auto;
+        padding: 35px 28px 25px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .analysis-heading {
+        margin-bottom: 25px;
+      }
+
+      .analysis-heading h1 {
+        margin: 0 0 10px;
+        color: #173f2b;
+        font-size: 30px;
+      }
+
+      .analysis-heading p {
+        margin: 0;
+        color: #66746b;
+        line-height: 1.6;
+      }
+
+      .section-title {
+        margin: 0 0 18px;
+        font-size: 20px;
+        color: #173f2b;
+      }
+
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+        margin-bottom: 25px;
+      }
+
+      .analysis-layout {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+        margin-bottom: 25px;
+      }
+
+      .analysis-card {
+        min-width: 0;
+        padding: 24px;
+        background: #ffffff;
+        border: 1px solid #e1e9e3;
+        border-radius: 14px;
+        box-shadow: 0 5px 18px rgba(23, 63, 43, 0.05);
+      }
+
+      .image-frame {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: 250px;
+        padding: 12px;
+        background: #edf2ee;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .image-frame img {
+        display: block;
+        max-width: 100%;
+        max-height: 480px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+      }
+
+      .image-caption {
+        margin: 14px 0 0;
+        color: #68766d;
+        font-size: 13px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+
+      .status-label {
+        display: inline-block;
+        margin-bottom: 15px;
+        padding: 7px 11px;
+        border-radius: 20px;
+        background: #e1f5e7;
+        color: #176334;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .result-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+
+      .summary-box {
+        padding: 17px;
+        border: 1px solid #e1e9e3;
+        border-radius: 10px;
+        background: #f8fbf8;
+      }
+
+      .summary-box span {
+        display: block;
+        margin-bottom: 8px;
+        color: #68766d;
+        font-size: 13px;
+      }
+
+      .summary-box strong {
+        color: #173f2b;
+        font-size: 25px;
+      }
+
+      .result-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 13px 0;
+        border-bottom: 1px solid #edf1ed;
+      }
+
+      .result-row:last-child {
+        border-bottom: none;
+      }
+
+      .result-label {
+        color: #68766d;
+        font-size: 14px;
+      }
+
+      .result-value {
+        text-align: right;
+        font-size: 14px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+
+      .detection-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .detection-item {
+        padding: 15px;
+        background: #f7faf7;
+        border: 1px solid #e1e9e3;
+        border-radius: 10px;
+      }
+
+      .detection-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .animal-name {
+        color: #173f2b;
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: capitalize;
+      }
+
+      .confidence {
+        color: #176334;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .confidence-track {
+        width: 100%;
+        height: 7px;
+        background: #e1e9e3;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .confidence-fill {
+        height: 100%;
+        background: #2e8b57;
+        border-radius: 10px;
+      }
+
+      .coordinates {
+        margin-top: 10px;
+        color: #68766d;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .empty-state {
+        padding: 22px;
+        text-align: center;
+        background: #f7faf7;
+        border: 1px dashed #b9c9bd;
+        border-radius: 10px;
+        color: #68766d;
+        line-height: 1.7;
+      }
+
+      .info-note {
+        margin-top: 18px;
+        padding: 14px;
+        background: #f0f5f1;
+        border-left: 4px solid #2e8b57;
+        border-radius: 5px;
+        color: #58665d;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .analysis-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: auto;
+        padding-top: 12px;
+      }
+
+      .action-button {
+        display: inline-block;
+        padding: 12px 18px;
+        border: 1px solid #173f2b;
+        border-radius: 8px;
+        background: #173f2b;
+        color: white;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        transition: background 0.2s ease;
+      }
+
+      .action-button:hover {
+        background: #245b3e;
+      }
+
+      .action-button.secondary {
+        background: white;
+        color: #173f2b;
+      }
+
+      .action-button.secondary:hover {
+        background: #edf5ef;
+      }
+
+      @media (max-width: 850px) {
+        .image-grid,
+        .analysis-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .analysis-page {
+          padding: 25px 18px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .navbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .analysis-heading h1 {
+          font-size: 25px;
+        }
+
+        .analysis-card {
+          padding: 17px;
+        }
+
+        .image-frame {
+          min-height: 180px;
+        }
+
+        .result-summary {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .summary-box {
+          padding: 12px;
+        }
+
+        .summary-box strong {
+          font-size: 21px;
+        }
+
+        .analysis-actions {
+          flex-direction: column;
+        }
+
+        .action-button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar">
+      <h2>Wildlife Comparative Analyzer</h2>
+
+      <div class="navbar-links">
+        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('main.upload_media') }}">Upload Media</a>
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+      </div>
+    </nav>
+
+    <main class="analysis-page">
+      <section class="analysis-heading">
+        <h1>Image Analysis Results</h1>
+
+        <p>
+          Review the uploaded image, inspect the detected animals, and examine
+          the confidence scores generated by the pretrained YOLO object
+          detection model.
+        </p>
+      </section>
+
+      <!-- Original and processed images -->
+      <section class="image-grid">
+        <article class="analysis-card">
+          <h2 class="section-title">Original Image</h2>
+
+          <div class="image-frame">
+            <img
+              src="{{ url_for('main.view_media', media_id=media.id) }}"
+              alt="Original uploaded image"
+            />
+          </div>
+
+          <p class="image-caption">Uploaded file: {{ media.filename }}</p>
+        </article>
+
+        <article class="analysis-card">
+          <h2 class="section-title">Animal Detection Output</h2>
+
+          <div class="image-frame">
+            <img
+              src="{{ annotated_image_url }}"
+              alt="Image annotated with detected animals and bounding boxes"
+            />
+          </div>
+
+          <p class="image-caption">
+            Bounding boxes indicate detected animals. Labels and confidence
+            scores are produced by the detection model.
+          </p>
+        </article>
+      </section>
+
+      <!-- Detection information and image properties -->
+      <section class="analysis-layout">
+        <article class="analysis-card">
+          <h2 class="section-title">Detection Results</h2>
+
+          <span class="status-label"> YOLO Analysis Completed </span>
+
+          <div class="result-summary">
+            <div class="summary-box">
+              <span>Animals Detected</span>
+              <strong>{{ analysis.detection_count }}</strong>
+            </div>
+
+            <div class="summary-box">
+              <span>Model</span>
+              <strong>YOLO</strong>
+            </div>
+          </div>
+
+          {% if analysis.detections %}
+
+          <div class="detection-list">
+            {% for detection in analysis.detections %}
+
+            <div class="detection-item">
+              <div class="detection-top">
+                <span class="animal-name"> {{ detection.class_name }} </span>
+
+                <span class="confidence">
+                  {{ "%.2f"|format(detection.confidence) }}%
+                </span>
+              </div>
+
+              <div class="confidence-track">
+                <div
+                  class="confidence-fill"
+                  style="width: {{ detection.confidence }}%;"
+                ></div>
+              </div>
+
+              <div class="coordinates">
+                Bounding box: ({{ detection.x1 }}, {{ detection.y1 }}) to ({{
+                detection.x2 }}, {{ detection.y2 }})
+              </div>
+            </div>
+
+            {% endfor %}
+          </div>
+
+          {% else %}
+
+          <div class="empty-state">
+            <strong>No supported animals were detected.</strong>
+
+            <p>
+              The model did not identify any supported animal classes above the
+              configured confidence threshold. This does not necessarily mean
+              the image contains no animals.
+            </p>
+          </div>
+
+          {% endif %}
+
+          <div class="info-note">
+            <strong>Important:</strong>
+            Confidence represents the model's confidence in a particular
+            detection. It is not a guarantee that the detection is correct. The
+            current pretrained model supports selected general animal classes
+            and may not identify every wildlife species.
+          </div>
+        </article>
+
+        <article class="analysis-card">
+          <h2 class="section-title">Image Properties</h2>
+
+          <div class="result-row">
+            <span class="result-label">Filename</span>
+            <span class="result-value"> {{ analysis.filename }} </span>
+          </div>
+
+          <div class="result-row">
+            <span class="result-label">Image Width</span>
+            <span class="result-value"> {{ analysis.width }} pixels </span>
+          </div>
+
+          <div class="result-row">
+            <span class="result-label">Image Height</span>
+            <span class="result-value"> {{ analysis.height }} pixels </span>
+          </div>
+
+          <div class="result-row">
+            <span class="result-label">Channels</span>
+            <span class="result-value"> {{ analysis.channels }} </span>
+          </div>
+
+          <div class="result-row">
+            <span class="result-label">File Size</span>
+            <span class="result-value"> {{ analysis.file_size_kb }} KB </span>
+          </div>
+
+          <div class="result-row">
+            <span class="result-label">Grayscale Conversion</span>
+            <span class="result-value"> {{ analysis.grayscale_status }} </span>
+          </div>
+
+          <div class="info-note">
+            These properties describe the input image and the preprocessing
+            operation performed during analysis. Detection results are generated
+            separately by the YOLO model.
+          </div>
+        </article>
+      </section>
+
+      <div class="analysis-actions">
+        <a href="{{ url_for('main.dashboard') }}" class="action-button">
+          Back to Dashboard
+        </a>
+
+        <a
+          href="{{ url_for('main.upload_media') }}"
+          class="action-button secondary"
+        >
+          Upload Another Image
+        </a>
+      </div>
+    </main>
+  </body>
+</html>
