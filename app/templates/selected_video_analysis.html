@@ -1,0 +1,173 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classical Video Results | Wildlife Comparative Analyzer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7f5;
+      color: #26352d;
+    }
+    header {
+      padding: 24px 6%;
+      background: #173d2b;
+      color: white;
+    }
+    header h1 { margin: 0 0 8px; }
+    header p { margin: 0; color: #d5e6d9; }
+    main { width: min(1150px, 92%); margin: 30px auto; }
+    .panel, .result-card {
+      padding: 22px;
+      margin-bottom: 22px;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 3px 14px rgba(0,0,0,.05);
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+    video {
+      display: block;
+      width: 100%;
+      max-height: 380px;
+      background: #111;
+      border-radius: 8px;
+    }
+    .description { color: #58675e; line-height: 1.7; }
+    .metric {
+      margin-top: 12px;
+      padding: 14px;
+      background: #f0f5f1;
+      border-radius: 8px;
+    }
+    .metric span {
+      display: block;
+      margin-bottom: 6px;
+      color: #607066;
+      font-size: 13px;
+    }
+    .metric strong { font-size: 19px; overflow-wrap: anywhere; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .actions a {
+      display: inline-block;
+      padding: 12px 18px;
+      border-radius: 7px;
+      text-decoration: none;
+      font-weight: bold;
+      background: #237347;
+      color: white;
+    }
+    .actions a.secondary { background: #e2e9e4; color: #26352d; }
+    @media (max-width: 700px) {
+      .results-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Wildlife Comparative Analyzer</h1>
+  <p>Selected classical video feature pipeline</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Classical Video Feature Results</h2>
+    <p><strong>File:</strong> {{ media.filename }}</p>
+    <p><strong>Selected method:</strong> {{ algorithm }}</p>
+    <p class="description">
+      This selected pipeline generates edge-detection, SIFT-feature and
+      HOG-feature visualizations. These outputs do not independently
+      identify or classify wildlife.
+    </p>
+  </section>
+
+  <section class="results-grid">
+    <article class="result-card">
+      <h2>Canny Edge Detection</h2>
+      <video controls preload="metadata">
+        <source src="{{ edges_video_url }}" type="video/mp4">
+        Your browser does not support HTML video.
+      </video>
+      {% if analysis.average_edge_pixel_percentage is defined %}
+        <div class="metric">
+          <span>Average edge-pixel percentage</span>
+          <strong>{{ analysis.average_edge_pixel_percentage }}%</strong>
+        </div>
+      {% endif %}
+    </article>
+
+    <article class="result-card">
+      <h2>SIFT Feature Extraction</h2>
+      <video controls preload="metadata">
+        <source src="{{ sift_video_url }}" type="video/mp4">
+        Your browser does not support HTML video.
+      </video>
+      {% if analysis.average_keypoints_per_frame is defined %}
+        <div class="metric">
+          <span>Average keypoints per frame</span>
+          <strong>{{ analysis.average_keypoints_per_frame }}</strong>
+        </div>
+      {% endif %}
+    </article>
+
+    <article class="result-card">
+      <h2>HOG Feature Extraction</h2>
+      <video controls preload="metadata">
+        <source src="{{ hog_video_url }}" type="video/mp4">
+        Your browser does not support HTML video.
+      </video>
+      {% if analysis.average_hog_features_per_frame is defined %}
+        <div class="metric">
+          <span>Average HOG feature-vector length</span>
+          <strong>{{ analysis.average_hog_features_per_frame }}</strong>
+        </div>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2>Processing Summary</h2>
+
+    {% if analysis.processed_frames is defined %}
+      <div class="metric">
+        <span>Processed frames</span>
+        <strong>{{ analysis.processed_frames }}</strong>
+      </div>
+    {% endif %}
+
+    {% if analysis.processing_time_seconds is defined %}
+      <div class="metric">
+        <span>Processing time</span>
+        <strong>{{ analysis.processing_time_seconds }} seconds</strong>
+      </div>
+    {% endif %}
+
+    {% if analysis.processing_fps is defined %}
+      <div class="metric">
+        <span>Processing speed</span>
+        <strong>{{ analysis.processing_fps }} FPS</strong>
+      </div>
+    {% endif %}
+
+    <p class="description">
+      Edge percentages, keypoint counts and HOG feature-vector lengths
+      are method-specific measurements, not wildlife detection accuracy.
+    </p>
+
+    <div class="actions">
+      <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
+      <a class="secondary" href="{{ url_for('main.compare_video', media_id=media.id) }}">
+        Compare Video Methods
+      </a>
+    </div>
+  </section>
+</main>
+</body>
+</html>

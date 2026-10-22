@@ -12,3 +12,8 @@ instance/
 .vscode/
 database/*.db
 models/wildlife_detector/model.onnx
+# Local backup files
+app/routes.py.backup
+
+# Generated training outputs
+runs/

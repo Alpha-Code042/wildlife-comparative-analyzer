@@ -1,3 +1,4 @@
+
 import os
 import uuid
 import time
@@ -22,20 +23,11 @@ from flask_login import (
     current_user,
 )
 
-from werkzeug.security import (
-    generate_password_hash,
-    check_password_hash,
-)
-
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 from app import db
-from app.models import (
-    User,
-    Media,
-    ProcessingJob,
-    AlgorithmBenchmark,
-)
+from app.models import User, Media, ProcessingJob, AlgorithmBenchmark
 
 from algorithms.classical_processor import analyze_classical_image
 from algorithms.image_processor import analyze_image
@@ -47,19 +39,15 @@ from algorithms.hog_processor import analyze_hog_image
 
 main = Blueprint("main", __name__)
 
+ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "avi", "mov", "mkv", "webm"}
 
-ALLOWED_IMAGE_EXTENSIONS = {
-    "jpg", "jpeg", "png", "webp",
-}
 
-ALLOWED_VIDEO_EXTENSIONS = {
-    "mp4", "avi", "mov", "mkv", "webm",
-}
-
+# ---------------------------------------------------------
+# FILE AND PATH HELPERS
+# ---------------------------------------------------------
 
 def get_file_type(filename):
-    """Identify supported image and video files."""
-
     if "." not in filename:
         return None
 
@@ -75,12 +63,9 @@ def get_file_type(filename):
 
 
 def get_safe_media_path(media):
-    """Verify that a media file is inside the upload directory."""
-
     upload_folder = os.path.realpath(
         current_app.config["UPLOAD_FOLDER"]
     )
-
     stored_path = os.path.realpath(media.file_path)
 
     try:
@@ -97,21 +82,14 @@ def get_safe_media_path(media):
     return upload_folder, stored_path
 
 
-def get_detection_result_path(media):
-    """Build and validate the expected annotated image path."""
-
+def get_result_file(folder_name, filename):
     project_dir = Path(current_app.root_path).parent
 
     results_folder = os.path.realpath(
-        project_dir / "results" / "detections"
+        project_dir / "results" / folder_name
     )
-
-    stored_path = os.path.realpath(media.file_path)
-
-    output_filename = Path(stored_path).stem + "_detected.jpg"
-
     output_path = os.path.realpath(
-        os.path.join(results_folder, output_filename)
+        os.path.join(results_folder, filename)
     )
 
     try:
@@ -125,47 +103,29 @@ def get_detection_result_path(media):
     if not os.path.isfile(output_path):
         abort(404)
 
-    return results_folder, output_filename
+    return results_folder, os.path.basename(output_path)
+
+
+def get_detection_result_path(media):
+    _, stored_path = get_safe_media_path(media)
+
+    filename = Path(stored_path).stem + "_detected.jpg"
+
+    return get_result_file("detections", filename)
 
 
 def get_video_result_path(media):
-    """Build and validate the expected processed-video path."""
+    _, stored_path = get_safe_media_path(media)
 
-    project_dir = Path(current_app.root_path).parent
+    filename = Path(stored_path).stem + "_detected.mp4"
 
-    results_folder = os.path.realpath(
-        project_dir / "results" / "videos"
-    )
-
-    stored_path = os.path.realpath(media.file_path)
-
-    output_filename = Path(stored_path).stem + "_detected.mp4"
-
-    output_path = os.path.realpath(
-        os.path.join(results_folder, output_filename)
-    )
-
-    try:
-        if os.path.commonpath(
-            [results_folder, output_path]
-        ) != results_folder:
-            abort(404)
-    except ValueError:
-        abort(404)
-
-    if not os.path.isfile(output_path):
-        abort(404)
-
-    return results_folder, output_filename
+    return get_result_file("videos", filename)
 
 
 def get_safe_deletion_paths(media):
-    """Return validated uploaded and generated file paths."""
-
     upload_folder = os.path.realpath(
         current_app.config["UPLOAD_FOLDER"]
     )
-
     stored_path = os.path.realpath(media.file_path)
 
     try:
@@ -177,54 +137,125 @@ def get_safe_deletion_paths(media):
         abort(404)
 
     project_dir = Path(current_app.root_path).parent
-    media_stem = Path(stored_path).stem
+    stem = Path(stored_path).stem
 
-    safe_paths = [stored_path]
+    paths = [stored_path]
 
     result_definitions = {
-        "detections": [
-            f"{media_stem}_detected.jpg",
-        ],
+        "detections": [f"{stem}_detected.jpg"],
         "videos": [
-            f"{media_stem}_detected.mp4",
-            f"{media_stem}_edges.mp4",
-            f"{media_stem}_sift_features.mp4",
-            f"{media_stem}_hog_features.mp4",
+            f"{stem}_detected.mp4",
+            f"{stem}_edges.mp4",
+            f"{stem}_sift_features.mp4",
+            f"{stem}_hog_features.mp4",
         ],
-        "sift": [
-            f"{media_stem}_sift_features.jpg",
-        ],
-        "hog": [
-            f"{media_stem}_hog_features.jpg",
-        ],
+        "sift": [f"{stem}_sift_features.jpg"],
+        "hog": [f"{stem}_hog_features.jpg"],
         "classical": [
-            f"{media_stem}_grayscale.jpg",
-            f"{media_stem}_edges.jpg",
+            f"{stem}_grayscale.jpg",
+            f"{stem}_edges.jpg",
         ],
     }
 
     for folder_name, filenames in result_definitions.items():
-        results_folder = os.path.realpath(
+        folder = os.path.realpath(
             project_dir / "results" / folder_name
         )
 
         for filename in filenames:
             output_path = os.path.realpath(
-                os.path.join(results_folder, filename)
+                os.path.join(folder, filename)
             )
 
             try:
                 if os.path.commonpath(
-                    [results_folder, output_path]
-                ) != results_folder:
+                    [folder, output_path]
+                ) != folder:
                     abort(404)
             except ValueError:
                 abort(404)
 
-            safe_paths.append(output_path)
+            paths.append(output_path)
 
-    return safe_paths
+    return paths
 
+
+def get_owned_media(media_id):
+    media = db.session.get(Media, media_id)
+
+    if media is None:
+        abort(404)
+
+    if media.user_id != current_user.id:
+        abort(403)
+
+    return media
+
+
+# ---------------------------------------------------------
+# PROCESSING JOB AND BENCHMARK HELPERS
+# ---------------------------------------------------------
+
+def create_processing_job(media, algorithm):
+    job = ProcessingJob(
+        user_id=current_user.id,
+        media_id=media.id,
+        algorithm=algorithm,
+        status="processing",
+        started_at=db.func.now(),
+    )
+
+    db.session.add(job)
+    db.session.commit()
+
+    return job
+
+
+def complete_processing_job(job, algorithm, elapsed, result=None):
+    processing_time = elapsed
+    fps = None
+
+    if isinstance(result, dict):
+        processing_time = result.get(
+            "processing_time_seconds", elapsed
+        )
+        fps = result.get("processing_fps")
+
+    job.status = "completed"
+    job.completed_at = db.func.now()
+
+    benchmark = AlgorithmBenchmark(
+        processing_job_id=job.id,
+        algorithm=algorithm,
+        processing_time=processing_time,
+        fps=fps,
+    )
+
+    db.session.add(benchmark)
+    db.session.commit()
+
+
+def fail_processing_job(job_id):
+    db.session.rollback()
+
+    try:
+        job = db.session.get(ProcessingJob, job_id)
+
+        if job is not None:
+            job.status = "failed"
+            job.completed_at = db.func.now()
+            db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Could not mark processing job as failed."
+        )
+
+
+# ---------------------------------------------------------
+# HOME, REGISTRATION AND LOGIN
+# ---------------------------------------------------------
 
 @main.route("/")
 def home():
@@ -234,9 +265,9 @@ def home():
 @main.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        username = request.form["username"].strip()
-        email = request.form["email"].strip().lower()
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
         if not username or not email or not password:
             flash("Please complete all fields.", "error")
@@ -272,8 +303,8 @@ def register():
 @main.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"].strip().lower()
-        password = request.form["password"]
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
         user = User.query.filter_by(email=email).first()
 
@@ -296,6 +327,10 @@ def login():
 
     return render_template("login.html")
 
+
+# ---------------------------------------------------------
+# DASHBOARD AND UPLOAD
+# ---------------------------------------------------------
 
 @main.route("/dashboard")
 @login_required
@@ -334,7 +369,7 @@ def upload_media():
 
         if file_type is None:
             flash(
-                "Unsupported file type. Please select a supported image or video.",
+                "Unsupported file type. Select a supported image or video.",
                 "error",
             )
             return redirect(url_for("main.upload_media"))
@@ -368,8 +403,7 @@ def upload_media():
                     os.remove(file_path)
                 except OSError:
                     current_app.logger.exception(
-                        "Could not remove failed upload: %s",
-                        file_path,
+                        "Could not remove failed upload."
                     )
 
             current_app.logger.exception("Media upload failed.")
@@ -391,21 +425,18 @@ def upload_media():
     return render_template("upload.html")
 
 
+# ---------------------------------------------------------
+# VIEW AND DELETE UPLOADED MEDIA
+# ---------------------------------------------------------
+
 @main.route("/media/<int:media_id>")
 @login_required
 def view_media(media_id):
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
-
-    upload_folder, stored_path = get_safe_media_path(media)
+    media = get_owned_media(media_id)
+    folder, stored_path = get_safe_media_path(media)
 
     response = send_from_directory(
-        upload_folder,
+        folder,
         os.path.basename(stored_path),
         as_attachment=False,
         conditional=True,
@@ -419,17 +450,8 @@ def view_media(media_id):
 @main.route("/delete-media/<int:media_id>", methods=["POST"])
 @login_required
 def delete_media(media_id):
-    """Delete owned media and its related analysis records."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
-
-    deletion_paths = get_safe_deletion_paths(media)
+    media = get_owned_media(media_id)
+    paths = get_safe_deletion_paths(media)
 
     try:
         jobs = ProcessingJob.query.filter_by(
@@ -464,24 +486,23 @@ def delete_media(media_id):
 
         return redirect(url_for("main.dashboard"))
 
-    file_cleanup_failed = False
+    cleanup_failed = False
 
-    for path in deletion_paths:
+    for path in paths:
         try:
             if os.path.isfile(path):
                 os.remove(path)
         except OSError:
-            file_cleanup_failed = True
-
+            cleanup_failed = True
             current_app.logger.exception(
-                "Database record was deleted, but file cleanup failed: %s",
+                "Could not remove stored file: %s",
                 path,
             )
 
-    if file_cleanup_failed:
+    if cleanup_failed:
         flash(
-            "The media record was deleted, but a file could not be removed "
-            "from storage. Check the application terminal.",
+            "The media record was deleted, but one or more stored files "
+            "could not be removed.",
             "error",
         )
     else:
@@ -490,18 +511,215 @@ def delete_media(media_id):
     return redirect(url_for("main.dashboard"))
 
 
+# ---------------------------------------------------------
+# NEW: ANALYZE USING THE USER'S SELECTED ALGORITHM
+# ---------------------------------------------------------
+
+@main.route("/analyze-selected/<int:media_id>", methods=["POST"])
+@login_required
+def analyze_selected(media_id):
+    media = get_owned_media(media_id)
+    algorithm = request.form.get("algorithm", "").strip()
+
+    image_algorithms = {
+        "YOLO26n",
+        "Classical OpenCV",
+        "SIFT",
+        "HOG",
+    }
+
+    video_algorithms = {
+        "YOLO26n",
+        "Classical Video Features",
+    }
+
+    if media.file_type == "image" and algorithm not in image_algorithms:
+        flash("Choose a valid algorithm for this image.", "error")
+        return redirect(url_for("main.dashboard"))
+
+    if media.file_type == "video" and algorithm not in video_algorithms:
+        flash("Choose a valid algorithm for this video.", "error")
+        return redirect(url_for("main.dashboard"))
+
+    job_id = None
+
+    try:
+        _, stored_path = get_safe_media_path(media)
+
+        job = create_processing_job(media, algorithm)
+        job_id = job.id
+
+        start_time = time.perf_counter()
+
+        # IMAGE ANALYSIS
+        if media.file_type == "image":
+
+            if algorithm == "YOLO26n":
+                result = analyze_image(stored_path)
+
+                elapsed = round(
+                    time.perf_counter() - start_time, 4
+                )
+
+                complete_processing_job(
+                    job, algorithm, elapsed, result
+                )
+
+                analysis = {
+                    "filename": result["filename"],
+                    "width": result["width"],
+                    "height": result["height"],
+                    "channels": result["channels"],
+                    "file_size_kb": result["file_size_kb"],
+                    "grayscale_status": "Successful",
+                    "detections": result["detections"],
+                    "detection_count": result["detection_count"],
+                }
+
+                return render_template(
+                    "analyze.html",
+                    media=media,
+                    analysis=analysis,
+                    annotated_image_url=url_for(
+                        "main.view_analysis_result",
+                        media_id=media.id,
+                    ),
+                )
+
+            if algorithm == "Classical OpenCV":
+                result = analyze_classical_image(stored_path)
+                result_type = "classical"
+                result_url = None
+
+            elif algorithm == "SIFT":
+                result = analyze_sift_image(stored_path)
+                result_type = "sift"
+
+                result_url = url_for(
+                    "main.view_feature_result",
+                    media_id=media.id,
+                    algorithm="sift",
+                )
+
+            else:
+                result = analyze_hog_image(stored_path)
+                result_type = "hog"
+
+                result_url = url_for(
+                    "main.view_feature_result",
+                    media_id=media.id,
+                    algorithm="hog",
+                )
+
+            elapsed = round(
+                time.perf_counter() - start_time, 4
+            )
+
+            complete_processing_job(
+                job, algorithm, elapsed, result
+            )
+
+            return render_template(
+                "selected_image_analysis.html",
+                media=media,
+                algorithm=algorithm,
+                analysis=result,
+                result_type=result_type,
+                result_url=result_url,
+                grayscale_url=url_for(
+                    "main.view_classical_result",
+                    media_id=media.id,
+                    result_type="grayscale",
+                ),
+                edges_url=url_for(
+                    "main.view_classical_result",
+                    media_id=media.id,
+                    result_type="edges",
+                ),
+            )
+
+        # VIDEO ANALYSIS
+        if algorithm == "YOLO26n":
+            result = analyze_video(stored_path)
+
+            elapsed = round(
+                time.perf_counter() - start_time, 4
+            )
+
+            complete_processing_job(
+                job, algorithm, elapsed, result
+            )
+
+            return render_template(
+                "video_analysis.html",
+                media=media,
+                analysis=result,
+                video_url=url_for(
+                    "main.view_video_result",
+                    media_id=media.id,
+                ),
+            )
+
+        # Classical video feature processing
+        result = analyze_video_features(stored_path)
+
+        elapsed = round(
+            time.perf_counter() - start_time, 4
+        )
+
+        complete_processing_job(
+            job, algorithm, elapsed, result
+        )
+
+        return render_template(
+            "selected_video_analysis.html",
+            media=media,
+            algorithm=algorithm,
+            analysis=result,
+            edges_video_url=url_for(
+                "main.view_video_comparison_result",
+                media_id=media.id,
+                algorithm="edges",
+            ),
+            sift_video_url=url_for(
+                "main.view_video_comparison_result",
+                media_id=media.id,
+                algorithm="sift",
+            ),
+            hog_video_url=url_for(
+                "main.view_video_comparison_result",
+                media_id=media.id,
+                algorithm="hog",
+            ),
+        )
+
+    except Exception:
+        if job_id is not None:
+            fail_processing_job(job_id)
+
+        current_app.logger.exception(
+            "Selected algorithm %s failed for media ID %s.",
+            algorithm,
+            media.id,
+        )
+
+        flash(
+            f"{algorithm or 'The selected algorithm'} could not process "
+            "this file. Check the application terminal for details.",
+            "error",
+        )
+
+        return redirect(url_for("main.dashboard"))
+
+
+# ---------------------------------------------------------
+# IMAGE COMPARISON: RUN ALL FOUR METHODS
+# ---------------------------------------------------------
+
 @main.route("/compare/<int:media_id>")
 @login_required
 def compare_image(media_id):
-    """Compare YOLO, classical OpenCV, SIFT, and HOG."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "image":
         flash(
@@ -510,101 +728,105 @@ def compare_image(media_id):
         )
         return redirect(url_for("main.dashboard"))
 
+    _, stored_path = get_safe_media_path(media)
+
+    def run_benchmark(algorithm, processor):
+        job = create_processing_job(media, algorithm)
+
+        try:
+            started = time.perf_counter()
+            result = processor(stored_path)
+
+            elapsed = round(
+                time.perf_counter() - started, 4
+            )
+
+            complete_processing_job(
+                job, algorithm, elapsed, result
+            )
+
+            return result, elapsed
+
+        except Exception:
+            fail_processing_job(job.id)
+            raise
+
     try:
-        _, stored_path = get_safe_media_path(media)
-
-        yolo_start = time.perf_counter()
-        yolo_analysis = analyze_image(stored_path)
-        yolo_time = round(time.perf_counter() - yolo_start, 4)
-
-        classical_analysis = analyze_classical_image(stored_path)
-        sift_analysis = analyze_sift_image(stored_path)
-        hog_analysis = analyze_hog_image(stored_path)
-
-        yolo_image_url = url_for(
-            "main.view_analysis_result",
-            media_id=media.id,
+        yolo, yolo_time = run_benchmark(
+            "YOLO26n", analyze_image
         )
 
-        grayscale_url = url_for(
-            "main.view_classical_result",
-            media_id=media.id,
-            result_type="grayscale",
+        classical, classical_time = run_benchmark(
+            "Classical OpenCV", analyze_classical_image
         )
 
-        edges_url = url_for(
-            "main.view_classical_result",
-            media_id=media.id,
-            result_type="edges",
+        sift, sift_time = run_benchmark(
+            "SIFT", analyze_sift_image
         )
 
-        sift_image_url = url_for(
-            "main.view_feature_result",
-            media_id=media.id,
-            algorithm="sift",
-        )
-
-        hog_image_url = url_for(
-            "main.view_feature_result",
-            media_id=media.id,
-            algorithm="hog",
+        hog, hog_time = run_benchmark(
+            "HOG", analyze_hog_image
         )
 
         return render_template(
             "comparison.html",
             media=media,
-            yolo_analysis=yolo_analysis,
+            yolo_analysis=yolo,
             yolo_time=yolo_time,
-            classical_analysis=classical_analysis,
-            sift_analysis=sift_analysis,
-            hog_analysis=hog_analysis,
-            yolo_image_url=yolo_image_url,
-            grayscale_url=grayscale_url,
-            edges_url=edges_url,
-            sift_image_url=sift_image_url,
-            hog_image_url=hog_image_url,
+            classical_analysis=classical,
+            classical_time=classical_time,
+            sift_analysis=sift,
+            sift_time=sift_time,
+            hog_analysis=hog,
+            hog_time=hog_time,
+            yolo_image_url=url_for(
+                "main.view_analysis_result",
+                media_id=media.id,
+            ),
+            grayscale_url=url_for(
+                "main.view_classical_result",
+                media_id=media.id,
+                result_type="grayscale",
+            ),
+            edges_url=url_for(
+                "main.view_classical_result",
+                media_id=media.id,
+                result_type="edges",
+            ),
+            sift_image_url=url_for(
+                "main.view_feature_result",
+                media_id=media.id,
+                algorithm="sift",
+            ),
+            hog_image_url=url_for(
+                "main.view_feature_result",
+                media_id=media.id,
+                algorithm="hog",
+            ),
         )
 
-    except (OSError, ValueError, RuntimeError) as error:
+    except Exception:
         current_app.logger.exception(
             "Image comparison failed for media ID %s.",
             media.id,
         )
 
         flash(
-            f"Could not compare this image: {error}",
+            "Could not compare this image. Check the application terminal.",
             "error",
         )
 
         return redirect(url_for("main.dashboard"))
 
-    except Exception:
-        current_app.logger.exception(
-            "Unexpected image comparison error for media ID %s.",
-            media.id,
-        )
 
-        flash(
-            "An unexpected error occurred during comparison. "
-            "Check the application terminal for details.",
-            "error",
-        )
-
-        return redirect(url_for("main.dashboard"))
-
+# ---------------------------------------------------------
+# SERVE IMAGE RESULTS
+# ---------------------------------------------------------
 
 @main.route("/feature-result/<int:media_id>/<algorithm>")
 @login_required
 def view_feature_result(media_id, algorithm):
-    """Serve the SIFT or HOG result for owned images."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "image":
         abort(404)
@@ -613,19 +835,18 @@ def view_feature_result(media_id, algorithm):
         abort(404)
 
     _, stored_path = get_safe_media_path(media)
-    image_stem = Path(stored_path).stem
-    output_filename = f"{image_stem}_{algorithm}_features.jpg"
 
-    project_dir = Path(current_app.root_path).parent
-    results_directory = project_dir / "results" / algorithm
-    output_path = results_directory / output_filename
+    filename = (
+        f"{Path(stored_path).stem}_{algorithm}_features.jpg"
+    )
 
-    if not output_path.is_file():
-        abort(404)
+    folder, filename = get_result_file(
+        algorithm, filename
+    )
 
     response = send_from_directory(
-        str(results_directory),
-        output_filename,
+        folder,
+        filename,
         mimetype="image/jpeg",
         as_attachment=False,
         conditional=True,
@@ -639,15 +860,7 @@ def view_feature_result(media_id, algorithm):
 @main.route("/classical-result/<int:media_id>/<result_type>")
 @login_required
 def view_classical_result(media_id, result_type):
-    """Serve a generated grayscale or edge-detection image."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "image":
         abort(404)
@@ -656,22 +869,18 @@ def view_classical_result(media_id, result_type):
         abort(404)
 
     _, stored_path = get_safe_media_path(media)
-    result_filename = f"{Path(stored_path).stem}_{result_type}.jpg"
 
-    results_directory = (
-        Path(__file__).resolve().parent.parent
-        / "results"
-        / "classical"
+    filename = (
+        f"{Path(stored_path).stem}_{result_type}.jpg"
     )
 
-    result_path = results_directory / result_filename
-
-    if not result_path.is_file():
-        abort(404)
+    folder, filename = get_result_file(
+        "classical", filename
+    )
 
     response = send_from_directory(
-        str(results_directory),
-        result_filename,
+        folder,
+        filename,
         mimetype="image/jpeg",
         as_attachment=False,
         conditional=True,
@@ -685,13 +894,7 @@ def view_classical_result(media_id, result_type):
 @main.route("/analyze/<int:media_id>")
 @login_required
 def analyze_media(media_id):
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "image":
         flash(
@@ -716,67 +919,43 @@ def analyze_media(media_id):
             "detection_count": result["detection_count"],
         }
 
-        annotated_image_url = url_for(
-            "main.view_analysis_result",
-            media_id=media.id,
+        return render_template(
+            "analyze.html",
+            media=media,
+            analysis=analysis,
+            annotated_image_url=url_for(
+                "main.view_analysis_result",
+                media_id=media.id,
+            ),
         )
 
-    except (FileNotFoundError, ValueError, OSError):
+    except Exception:
         current_app.logger.exception(
             "Image analysis failed for media ID %s.",
             media.id,
         )
 
         flash(
-            "This image could not be processed. Please check the uploaded file.",
+            "This image could not be processed. Check the application terminal.",
             "error",
         )
 
         return redirect(url_for("main.dashboard"))
-
-    except Exception:
-        current_app.logger.exception(
-            "Unexpected image-processing error for media ID %s.",
-            media.id,
-        )
-
-        flash(
-            "An unexpected error occurred during image analysis. "
-            "Check the application terminal for details.",
-            "error",
-        )
-
-        return redirect(url_for("main.dashboard"))
-
-    return render_template(
-        "analyze.html",
-        media=media,
-        analysis=analysis,
-        annotated_image_url=annotated_image_url,
-    )
 
 
 @main.route("/analysis-result/<int:media_id>")
 @login_required
 def view_analysis_result(media_id):
-    """Serve an annotated image belonging to the current user."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "image":
         abort(404)
 
-    results_folder, output_filename = get_detection_result_path(media)
+    folder, filename = get_detection_result_path(media)
 
     response = send_from_directory(
-        results_folder,
-        output_filename,
+        folder,
+        filename,
         mimetype="image/jpeg",
         as_attachment=False,
         conditional=True,
@@ -787,18 +966,14 @@ def view_analysis_result(media_id):
     return response
 
 
+# ---------------------------------------------------------
+# VIDEO ANALYSIS
+# ---------------------------------------------------------
+
 @main.route("/analyze-video/<int:media_id>")
 @login_required
 def analyze_video_media(media_id):
-    """Process an uploaded video using the configured wildlife detector."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "video":
         flash(
@@ -808,35 +983,19 @@ def analyze_video_media(media_id):
         return redirect(url_for("main.dashboard"))
 
     _, stored_path = get_safe_media_path(media)
-
-    processing_job = ProcessingJob(
-        user_id=current_user.id,
-        media_id=media.id,
-        algorithm="YOLO26n",
-        status="processing",
-    )
-
-    db.session.add(processing_job)
-    db.session.commit()
-
-    processing_job.started_at = db.func.now()
-    db.session.commit()
+    job = create_processing_job(media, "YOLO26n")
 
     try:
+        started = time.perf_counter()
         result = analyze_video(stored_path)
 
-        processing_job.status = "completed"
-        processing_job.completed_at = db.func.now()
-
-        benchmark = AlgorithmBenchmark(
-            processing_job_id=processing_job.id,
-            algorithm="YOLO26n",
-            processing_time=result["processing_time_seconds"],
-            fps=result["processing_fps"],
+        elapsed = round(
+            time.perf_counter() - started, 4
         )
 
-        db.session.add(benchmark)
-        db.session.commit()
+        complete_processing_job(
+            job, "YOLO26n", elapsed, result
+        )
 
         return render_template(
             "video_analysis.html",
@@ -848,64 +1007,30 @@ def analyze_video_media(media_id):
             ),
         )
 
-    except (FileNotFoundError, ValueError, OSError, RuntimeError):
-        db.session.rollback()
+    except Exception:
+        fail_processing_job(job.id)
 
         current_app.logger.exception(
             "Video analysis failed for media ID %s.",
             media.id,
         )
 
-        try:
-            processing_job.status = "failed"
-            processing_job.completed_at = db.func.now()
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-
         flash(
-            "This video could not be processed. Please check the uploaded file.",
+            "This video could not be processed. Check the application terminal.",
             "error",
         )
 
         return redirect(url_for("main.dashboard"))
 
-    except Exception:
-        db.session.rollback()
 
-        current_app.logger.exception(
-            "Unexpected video-processing error for media ID %s.",
-            media.id,
-        )
-
-        try:
-            processing_job.status = "failed"
-            processing_job.completed_at = db.func.now()
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-
-        flash(
-            "An unexpected error occurred during video analysis. "
-            "Check the application terminal for details.",
-            "error",
-        )
-
-        return redirect(url_for("main.dashboard"))
-
+# ---------------------------------------------------------
+# VIDEO COMPARISON: YOLO AND CLASSICAL VIDEO FEATURES
+# ---------------------------------------------------------
 
 @main.route("/compare-video/<int:media_id>")
 @login_required
 def compare_video(media_id):
-    """Compare YOLO, OpenCV edges, SIFT features, and HOG features on video."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "video":
         flash(
@@ -916,50 +1041,36 @@ def compare_video(media_id):
 
     _, stored_path = get_safe_media_path(media)
 
-    project_dir = Path(current_app.root_path).parent
-    video_results_dir = project_dir / "results" / "videos"
-    video_results_dir.mkdir(parents=True, exist_ok=True)
+    def run_video_benchmark(algorithm, processor):
+        job = create_processing_job(media, algorithm)
 
-    yolo_filename = f"{Path(stored_path).stem}_detected.mp4"
-    yolo_path = video_results_dir / yolo_filename
+        try:
+            started = time.perf_counter()
+            result = processor(stored_path)
 
-    try:
-        # Reuse an existing YOLO result and its latest saved benchmark
-        # when both are available.
-        yolo_analysis = None
-
-        if yolo_path.is_file():
-            previous_job = (
-                ProcessingJob.query
-                .filter_by(
-                    user_id=current_user.id,
-                    media_id=media.id,
-                    algorithm="YOLO26n",
-                    status="completed",
-                )
-                .order_by(ProcessingJob.id.desc())
-                .first()
+            elapsed = round(
+                time.perf_counter() - started, 4
             )
 
-            if previous_job is not None:
-                previous_benchmark = AlgorithmBenchmark.query.filter_by(
-                    processing_job_id=previous_job.id
-                ).first()
+            complete_processing_job(
+                job, algorithm, elapsed, result
+            )
 
-                if previous_benchmark is not None:
-                    yolo_analysis = {
-                        "processing_time_seconds":
-                            previous_benchmark.processing_time,
-                        "processing_fps": previous_benchmark.fps,
-                    }
+            return result
 
-        # Generate YOLO output if a reusable result and benchmark
-        # are not available. This does not create a duplicate job.
-        if yolo_analysis is None:
-            yolo_analysis = analyze_video(stored_path)
+        except Exception:
+            fail_processing_job(job.id)
+            raise
 
-        # Generate OpenCV edge, SIFT keypoint, and HOG gradient videos.
-        feature_analysis = analyze_video_features(stored_path)
+    try:
+        yolo_analysis = run_video_benchmark(
+            "YOLO26n", analyze_video
+        )
+
+        feature_analysis = run_video_benchmark(
+            "Classical Video Features (Canny + SIFT + HOG)",
+            analyze_video_features,
+        )
 
         return render_template(
             "video_comparison.html",
@@ -987,28 +1098,14 @@ def compare_video(media_id):
             ),
         )
 
-    except (FileNotFoundError, ValueError, OSError, RuntimeError) as error:
+    except Exception:
         current_app.logger.exception(
             "Video comparison failed for media ID %s.",
             media.id,
         )
 
         flash(
-            f"Could not compare this video: {error}",
-            "error",
-        )
-
-        return redirect(url_for("main.dashboard"))
-
-    except Exception:
-        current_app.logger.exception(
-            "Unexpected video comparison error for media ID %s.",
-            media.id,
-        )
-
-        flash(
-            "An unexpected error occurred during video comparison. "
-            "Check the application terminal for details.",
+            "Could not compare this video. Check the application terminal.",
             "error",
         )
 
@@ -1020,48 +1117,33 @@ def compare_video(media_id):
 )
 @login_required
 def view_video_comparison_result(media_id, algorithm):
-    """Serve generated feature videos for the media owner."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "video":
         abort(404)
 
-    if algorithm not in {"edges", "sift", "hog"}:
-        abort(404)
-
-    _, stored_path = get_safe_media_path(media)
-
-    media_stem = Path(stored_path).stem
-
-    output_filenames = {
-        "edges": f"{media_stem}_edges.mp4",
-        "sift": f"{media_stem}_sift_features.mp4",
-        "hog": f"{media_stem}_hog_features.mp4",
+    filenames = {
+        "edges": f"{Path(media.file_path).stem}_edges.mp4",
+        "sift": f"{Path(media.file_path).stem}_sift_features.mp4",
+        "hog": f"{Path(media.file_path).stem}_hog_features.mp4",
     }
 
-    output_filename = output_filenames[algorithm]
-
-    results_directory = (
-        Path(current_app.root_path).parent
-        / "results"
-        / "videos"
-    )
-
-    output_path = results_directory / output_filename
-
-    if not output_path.is_file():
+    if algorithm not in filenames:
         abort(404)
 
+    # Validate the upload path before deriving the output filename.
+    _, stored_path = get_safe_media_path(media)
+    filename = {
+        "edges": f"{Path(stored_path).stem}_edges.mp4",
+        "sift": f"{Path(stored_path).stem}_sift_features.mp4",
+        "hog": f"{Path(stored_path).stem}_hog_features.mp4",
+    }[algorithm]
+
+    folder, filename = get_result_file("videos", filename)
+
     response = send_from_directory(
-        str(results_directory),
-        output_filename,
+        folder,
+        filename,
         mimetype="video/mp4",
         as_attachment=False,
         conditional=True,
@@ -1075,24 +1157,16 @@ def view_video_comparison_result(media_id, algorithm):
 @main.route("/video-analysis-result/<int:media_id>")
 @login_required
 def view_video_result(media_id):
-    """Serve a processed video belonging to the current user."""
-
-    media = db.session.get(Media, media_id)
-
-    if media is None:
-        abort(404)
-
-    if media.user_id != current_user.id:
-        abort(403)
+    media = get_owned_media(media_id)
 
     if media.file_type != "video":
         abort(404)
 
-    results_folder, output_filename = get_video_result_path(media)
+    folder, filename = get_video_result_path(media)
 
     response = send_from_directory(
-        results_folder,
-        output_filename,
+        folder,
+        filename,
         mimetype="video/mp4",
         as_attachment=False,
         conditional=True,
@@ -1102,6 +1176,10 @@ def view_video_result(media_id):
 
     return response
 
+
+# ---------------------------------------------------------
+# LOGOUT AND UPLOAD SIZE ERROR
+# ---------------------------------------------------------
 
 @main.route("/logout")
 @login_required
