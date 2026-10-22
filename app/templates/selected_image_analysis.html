@@ -1,0 +1,201 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ algorithm }} Results | Wildlife Comparative Analyzer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7f5;
+      color: #26352d;
+    }
+    header {
+      padding: 24px 6%;
+      background: #173d2b;
+      color: white;
+    }
+    header h1 { margin: 0 0 8px; }
+    header p { margin: 0; color: #d5e6d9; }
+    main { width: min(1100px, 92%); margin: 30px auto; }
+    .card {
+      padding: 22px;
+      margin-bottom: 22px;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 3px 14px rgba(0,0,0,.05);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+    .result-image {
+      display: block;
+      width: 100%;
+      max-height: 480px;
+      object-fit: contain;
+      background: #edf1ee;
+      border-radius: 8px;
+    }
+    .metric {
+      margin: 12px 0;
+      padding: 14px;
+      background: #f0f5f1;
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+    }
+    .metric span {
+      display: block;
+      margin-bottom: 6px;
+      color: #607066;
+      font-size: 13px;
+    }
+    .metric strong { font-size: 19px; }
+    .description { color: #58675e; line-height: 1.7; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .actions a {
+      padding: 12px 18px;
+      border-radius: 7px;
+      text-decoration: none;
+      font-weight: bold;
+      background: #237347;
+      color: white;
+    }
+    .actions a.secondary { background: #e2e9e4; color: #26352d; }
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Wildlife Comparative Analyzer</h1>
+  <p>Selected image analysis</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>{{ algorithm }} Results</h2>
+    <p><strong>File:</strong> {{ media.filename }}</p>
+    <p class="description">
+      This page displays the output of the selected method only.
+      The reported processing time measures this run and can vary with
+      image size, hardware and processing conditions.
+    </p>
+  </section>
+
+  <section class="grid">
+    <article class="card">
+      <h2>Original Image</h2>
+      <img
+        class="result-image"
+        src="{{ url_for('main.view_media', media_id=media.id) }}"
+        alt="Original uploaded wildlife image"
+      >
+    </article>
+
+    {% if selected == "classical" %}
+      <article class="card">
+        <h2>Edge Detection Result</h2>
+        <img class="result-image" src="{{ edges_url }}" alt="Canny edge detection result">
+        <p class="description">
+          Edge detection highlights image boundaries and intensity changes.
+          It does not identify animal species.
+        </p>
+        <p>
+          <a href="{{ grayscale_url }}">View grayscale result</a>
+        </p>
+      </article>
+    {% elif selected == "sift" %}
+      <article class="card">
+        <h2>SIFT Feature Result</h2>
+        <img class="result-image" src="{{ feature_url }}" alt="Image with SIFT keypoints">
+        <p class="description">
+          SIFT extracts distinctive local keypoints and descriptors.
+          It does not independently classify wildlife.
+        </p>
+      </article>
+    {% elif selected == "hog" %}
+      <article class="card">
+        <h2>HOG Feature Result</h2>
+        <img class="result-image" src="{{ feature_url }}" alt="HOG gradient feature visualization">
+        <p class="description">
+          HOG represents gradient patterns in the image. This visualization
+          is not a wildlife detection result.
+        </p>
+      </article>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Processing Metrics</h2>
+
+    <div class="metric">
+      <span>Selected method</span>
+      <strong>{{ algorithm }}</strong>
+    </div>
+
+    {% if analysis.processing_time_seconds is defined %}
+      <div class="metric">
+        <span>Processing time</span>
+        <strong>{{ analysis.processing_time_seconds }} seconds</strong>
+      </div>
+    {% endif %}
+
+    {% if selected == "classical" %}
+      {% if analysis.edge_pixel_percentage is defined %}
+        <div class="metric">
+          <span>Edge-pixel percentage</span>
+          <strong>{{ analysis.edge_pixel_percentage }}%</strong>
+        </div>
+      {% endif %}
+    {% elif selected == "sift" %}
+      {% if analysis.keypoint_count is defined %}
+        <div class="metric">
+          <span>Keypoints extracted</span>
+          <strong>{{ analysis.keypoint_count }}</strong>
+        </div>
+      {% endif %}
+      {% if analysis.descriptor_count is defined %}
+        <div class="metric">
+          <span>Descriptors</span>
+          <strong>{{ analysis.descriptor_count }}</strong>
+        </div>
+      {% endif %}
+      {% if analysis.descriptor_dimensions is defined %}
+        <div class="metric">
+          <span>Descriptor dimensions</span>
+          <strong>{{ analysis.descriptor_dimensions }}</strong>
+        </div>
+      {% endif %}
+    {% elif selected == "hog" %}
+      {% if analysis.feature_vector_length is defined %}
+        <div class="metric">
+          <span>Feature-vector length</span>
+          <strong>{{ analysis.feature_vector_length }}</strong>
+        </div>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <p class="description">
+      Feature counts and edge statistics describe the output of their
+      respective methods. They are not measures of wildlife detection
+      accuracy. Accuracy evaluation requires ground-truth annotations and
+      a consistent evaluation procedure.
+    </p>
+    <div class="actions">
+      <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
+      <a class="secondary" href="{{ url_for('main.compare_image', media_id=media.id) }}">
+        Compare All Image Methods
+      </a>
+    </div>
+  </section>
+</main>
+</body>
+</html>

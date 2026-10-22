@@ -1,148 +1,169 @@
+
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Wildlife Comparative Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-    <title>Dashboard | Wildlife Comparative Analyzer</title>
+  <style>
+    .media-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
 
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    .media-card-actions a,
+    .selection-form button {
+      display: inline-block;
+      padding: 9px 14px;
+      border: 0;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
 
-    <style>
-      .media-card-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 10px;
-        margin-top: 15px;
+    .analyze-media-link,
+    .selection-form button {
+      background: #218838;
+      color: white;
+    }
+
+    .analyze-media-link:hover,
+    .selection-form button:hover {
+      background: #176b2c;
+    }
+
+    .view-media-link {
+      background: #e9ecef;
+      color: #212529;
+    }
+
+    .selection-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+      margin: 4px 0;
+    }
+
+    .selection-form label {
+      width: 100%;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .selection-form select {
+      flex: 1 1 190px;
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid #b9c9bd;
+      border-radius: 6px;
+      background: white;
+      color: #26352d;
+      font-size: 14px;
+    }
+
+    .delete-media-form {
+      display: inline-flex;
+      margin: 0;
+    }
+
+    .delete-media-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      padding: 8px;
+      border: 1px solid #dc3545;
+      border-radius: 6px;
+      background: #fff;
+      color: #dc3545;
+      cursor: pointer;
+    }
+
+    .delete-media-button:hover {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    .delete-media-button svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    .workflow-note {
+      margin-top: 12px;
+      color: #66746b;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .selection-form {
+        flex-direction: column;
       }
 
-      .media-card-actions a {
-        display: inline-block;
-        padding: 9px 14px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 600;
-        text-align: center;
+      .selection-form select,
+      .selection-form button {
+        width: 100%;
       }
+    }
+  </style>
+</head>
 
-      .analyze-media-link {
-        background-color: #218838;
-        color: white;
-      }
+<body>
+<header>
+  <h1>Wildlife Comparative Analyzer</h1>
+  <p>Your wildlife computer vision workspace</p>
+</header>
 
-      .analyze-media-link:hover {
-        background-color: #176b2c;
-      }
+<main>
+  <section class="dashboard">
+    <div class="dashboard-card">
+      <h2>Welcome, {{ current_user.username }}!</h2>
 
-      .view-media-link {
-        background-color: #e9ecef;
-        color: #212529;
-      }
+      <p>
+        Upload wildlife media, choose an analysis method, or compare
+        available methods using the same file.
+      </p>
 
-      .view-media-link:hover {
-        background-color: #d6d9dc;
-      }
-
-      .video-analysis-note {
-        margin-top: 10px;
-        color: #666;
-        font-size: 13px;
-      }
-
-      .delete-media-form {
-        display: inline-flex;
-        margin: 0;
-      }
-
-      .delete-media-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 38px;
-        height: 38px;
-        padding: 8px;
-        border: 1px solid #dc3545;
-        border-radius: 6px;
-        background: #fff;
-        color: #dc3545;
-        cursor: pointer;
-        transition:
-          background-color 0.2s,
-          color 0.2s;
-      }
-
-      .delete-media-button:hover {
-        background: #dc3545;
-        color: #fff;
-      }
-
-      .delete-media-button:focus-visible {
-        outline: 3px solid rgba(220, 53, 69, 0.3);
-        outline-offset: 2px;
-      }
-
-      .delete-media-button svg {
-        width: 19px;
-        height: 19px;
-      }
-    </style>
-  </head>
-
-  <body>
-    <header>
-      <h1>Wildlife Comparative Analyzer</h1>
-      <p>Your wildlife computer vision workspace</p>
-    </header>
-
-    <main>
-      <section class="dashboard">
-        <div class="dashboard-card">
-          <h2>Welcome, {{ current_user.username }}!</h2>
-
-          <p>
-            Manage your wildlife images and videos before running computer
-            vision analysis.
-          </p>
-
-          {% with messages = get_flashed_messages(with_categories=true) %} {%
-          for category, message in messages %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
           <div
             class="{{ 'error-message' if category == 'error' else 'success-message' }}"
             role="{{ 'alert' if category == 'error' else 'status' }}"
           >
             {{ message }}
           </div>
-          {% endfor %} {% endwith %}
+        {% endfor %}
+      {% endwith %}
 
-          <div class="dashboard-actions">
-            <a href="{{ url_for('main.upload_media') }}">Upload Media</a>
+      <div class="dashboard-actions">
+        <a href="{{ url_for('main.upload_media') }}">Upload Media</a>
+        <a href="#media-library">View My Media</a>
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+      </div>
+    </div>
 
-            <a href="#media-library">View My Media</a>
-
-            <a href="{{ url_for('main.logout') }}">Logout</a>
-          </div>
+    <div class="dashboard-card media-library" id="media-library">
+      <div class="library-heading">
+        <div>
+          <h2>My Wildlife Media</h2>
+          <p>Uploaded files: <strong>{{ media_files|length }}</strong></p>
         </div>
+      </div>
 
-        <div class="dashboard-card media-library" id="media-library">
-          <div class="library-heading">
-            <div>
-              <h2>My Wildlife Media</h2>
-
-              <p>
-                Uploaded files:
-                <strong>{{ media_files|length }}</strong>
-              </p>
-            </div>
-          </div>
-
-          {% if media_files %}
-          <div class="media-grid">
-            {% for media in media_files %}
+      {% if media_files %}
+        <div class="media-grid">
+          {% for media in media_files %}
             <article class="media-card">
               <a
                 class="media-preview"
@@ -152,64 +173,85 @@
                 aria-label="Open {{ media.filename }}"
               >
                 {% if media.file_type == "image" %}
-                <img
-                  src="{{ url_for('main.view_media', media_id=media.id) }}"
-                  alt="Uploaded wildlife image: {{ media.filename }}"
-                  loading="lazy"
-                />
-                {% elif media.file_type == "video" %}
-                <video
-                  controls
-                  preload="metadata"
-                  aria-label="Preview of {{ media.filename }}"
-                >
-                  <source
+                  <img
                     src="{{ url_for('main.view_media', media_id=media.id) }}"
-                  />
-                  Your browser does not support video playback.
-                </video>
+                    alt="Uploaded wildlife image: {{ media.filename }}"
+                    loading="lazy"
+                  >
+                {% elif media.file_type == "video" %}
+                  <video controls preload="metadata"
+                    aria-label="Preview of {{ media.filename }}">
+                    <source src="{{ url_for('main.view_media', media_id=media.id) }}">
+                    Your browser does not support video playback.
+                  </video>
                 {% endif %}
               </a>
 
               <div class="media-card-content">
                 <h3 title="{{ media.filename }}">{{ media.filename }}</h3>
-
-                <span class="media-type">
-                  {{ media.file_type|capitalize }}
-                </span>
-
+                <span class="media-type">{{ media.file_type|capitalize }}</span>
                 <p>Uploaded: {{ media.uploaded_at or "Date unavailable" }}</p>
 
                 <div class="media-card-actions">
                   {% if media.file_type == "image" %}
-                  <a
-                    class="analyze-media-link"
-                    href="{{ url_for('main.analyze_media', media_id=media.id) }}"
-                  >
-                    Analyze Image
-                  </a>
+                    <form
+                      class="selection-form"
+                      method="POST"
+                      action="{{ url_for('main.analyze_selected', media_id=media.id) }}"
+                    >
+                      <label for="algorithm-image-{{ media.id }}">
+                        Choose an image analysis method
+                      </label>
+                      <select
+                        id="algorithm-image-{{ media.id }}"
+                        name="algorithm"
+                        required
+                      >
+                        <option value="" selected disabled>Select algorithm</option>
+                        <option value="yolo">YOLO26n — Wildlife Detection</option>
+                        <option value="classical">Classical OpenCV — Grayscale and Edges</option>
+                        <option value="sift">SIFT — Feature Extraction</option>
+                        <option value="hog">HOG — Feature Extraction</option>
+                      </select>
+                      <button type="submit">Analyze Image</button>
+                    </form>
 
-                  <a
-                    class="analyze-media-link"
-                    href="{{ url_for('main.compare_image', media_id=media.id) }}"
-                  >
-                    Compare Algorithms
-                  </a>
+                    <a
+                      class="analyze-media-link"
+                      href="{{ url_for('main.compare_image', media_id=media.id) }}"
+                    >
+                      Compare All Image Methods
+                    </a>
 
                   {% elif media.file_type == "video" %}
-                  <a
-                    class="analyze-media-link"
-                    href="{{ url_for('main.analyze_video_media', media_id=media.id) }}"
-                  >
-                    Analyze Video
-                  </a>
+                    <form
+                      class="selection-form"
+                      method="POST"
+                      action="{{ url_for('main.analyze_selected', media_id=media.id) }}"
+                    >
+                      <label for="algorithm-video-{{ media.id }}">
+                        Choose a video analysis method
+                      </label>
+                      <select
+                        id="algorithm-video-{{ media.id }}"
+                        name="algorithm"
+                        required
+                      >
+                        <option value="" selected disabled>Select algorithm</option>
+                        <option value="yolo">YOLO26n — Wildlife Detection</option>
+                        <option value="classical_video">
+                          Classical Video Features — Canny, SIFT and HOG
+                        </option>
+                      </select>
+                      <button type="submit">Analyze Video</button>
+                    </form>
 
-                  <a
-                    class="analyze-media-link"
-                    href="{{ url_for('main.compare_video', media_id=media.id) }}"
-                  >
-                    Compare Video Algorithms
-                  </a>
+                    <a
+                      class="analyze-media-link"
+                      href="{{ url_for('main.compare_video', media_id=media.id) }}"
+                    >
+                      Compare Video Methods
+                    </a>
                   {% endif %}
 
                   <a
@@ -225,11 +267,7 @@
                     class="delete-media-form"
                     method="POST"
                     action="{{ url_for('main.delete_media', media_id=media.id) }}"
-                    onsubmit="
-                      return confirm(
-                        'Delete this uploaded file? Its saved database record and associated analysis result will also be removed. This action cannot be undone.',
-                      );
-                    "
+                    onsubmit="return confirm('Delete this uploaded file and its saved analysis records and results? This cannot be undone.');"
                   >
                     <button
                       type="submit"
@@ -258,35 +296,31 @@
                 </div>
               </div>
             </article>
-            {% endfor %}
-          </div>
-
-          {% else %}
-          <div class="empty-state">
-            <h3>No media uploaded yet</h3>
-
-            <p>
-              Upload a wildlife image or video to start building your media
-              library.
-            </p>
-
-            <a href="{{ url_for('main.upload_media') }}">
-              Upload Your First File
-            </a>
-          </div>
-          {% endif %}
+          {% endfor %}
         </div>
-
-        <div class="dashboard-card next-stage">
-          <h2>Algorithm Comparison</h2>
-
-          <p>
-            Compare YOLO wildlife detection with traditional OpenCV image
-            processing. View detection results, grayscale images, edge maps, and
-            processing-time measurements for uploaded images.
-          </p>
+      {% else %}
+        <div class="empty-state">
+          <h3>No media uploaded yet</h3>
+          <p>Upload a wildlife image or video to start building your media library.</p>
+          <a href="{{ url_for('main.upload_media') }}">Upload Your First File</a>
         </div>
-      </section>
-    </main>
-  </body>
+      {% endif %}
+    </div>
+
+    <div class="dashboard-card next-stage">
+      <h2>Algorithm Comparison</h2>
+      <p>
+        Run a single method when you want a focused result, or use the
+        separate comparison action to examine multiple methods on the same
+        uploaded file.
+      </p>
+      <p class="workflow-note">
+        YOLO performs object detection. Classical OpenCV, SIFT and HOG
+        provide image-processing or feature-extraction outputs; they do not
+        independently identify animal species.
+      </p>
+    </div>
+  </section>
+</main>
+</body>
 </html>

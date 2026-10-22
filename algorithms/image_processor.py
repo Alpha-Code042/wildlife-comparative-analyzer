@@ -11,6 +11,8 @@ MODEL_PATH = (
     PROJECT_DIR
     / "models"
     / "wildlife_detector"
+    / "sub_saharan"
+    / "1"
     / "model.onnx"
 )
 
@@ -21,6 +23,8 @@ RESULTS_DIR = (
 )
 
 
+# Display names for wildlife classes supported by the model.
+# Class names must match the model's actual output labels.
 WILDLIFE_CLASSES = {
     "AcinonyxJubatusJubatus": "Cheetah",
     "ConnochaetesTaurinus": "Wildebeest",
@@ -58,65 +62,49 @@ WILDLIFE_CLASSES = {
 }
 
 
+# Cache the loaded model so it is not reloaded for every image.
 _model = None
 
 
 def get_detection_model():
     """
-    Load the wildlife ONNX model once and keep it
-    in memory for subsequent analyses.
+    Load the Sub-Saharan wildlife ONNX model once and
+    reuse it for subsequent image analyses.
     """
-
     global _model
 
     if _model is None:
-
-        if not MODEL_PATH.exists():
+        if not MODEL_PATH.is_file():
             raise FileNotFoundError(
                 f"Wildlife model not found: {MODEL_PATH}"
             )
 
-        _model = YOLO(
-            str(MODEL_PATH)
-        )
+        _model = YOLO(str(MODEL_PATH))
 
     return _model
 
 
 def analyze_image(image_path):
     """
-    Analyze an uploaded wildlife image using
-    the Sub-Saharan Africa wildlife detector.
+    Analyze an uploaded image with the Sub-Saharan
+    wildlife detector and save an annotated result.
     """
-
-    image_path = os.path.realpath(
-        image_path
-    )
+    image_path = os.path.realpath(image_path)
 
     if not os.path.isfile(image_path):
         raise FileNotFoundError(
             f"Image file not found: {image_path}"
         )
 
-    image = cv2.imread(
-        image_path
-    )
+    image = cv2.imread(image_path)
 
     if image is None:
         raise ValueError(
-            "The selected file could not "
-            "be read as an image."
+            "The selected file could not be read as an image."
         )
 
-    height, width = (
-        image.shape[:2]
-    )
-
-    channels = (
-        1
-        if image.ndim == 2
-        else image.shape[2]
-    )
+    height, width = image.shape[:2]
+    channels = 1 if image.ndim == 2 else image.shape[2]
 
     grayscale = cv2.cvtColor(
         image,
@@ -125,13 +113,19 @@ def analyze_image(image_path):
 
     model = get_detection_model()
 
-    # Select only the wildlife classes.
+    # Select only class IDs whose actual model names are
+    # included in our wildlife display-name mapping.
     wildlife_class_ids = [
         class_id
-        for class_id, class_name
-        in model.names.items()
+        for class_id, class_name in model.names.items()
         if class_name in WILDLIFE_CLASSES
     ]
+
+    if not wildlife_class_ids:
+        raise RuntimeError(
+            "No matching wildlife classes were found in the model. "
+            "Check the model labels and WILDLIFE_CLASSES mapping."
+        )
 
     results = model.predict(
         source=image,
@@ -141,31 +135,15 @@ def analyze_image(image_path):
     )
 
     result = results[0]
-
     detections = []
 
     if result.boxes is not None:
-
         for box in result.boxes:
+            class_id = int(box.cls[0].item())
+            confidence = float(box.conf[0].item())
 
-            class_id = int(
-                box.cls[0].item()
-            )
-
-            confidence = float(
-                box.conf[0].item()
-            )
-
-            raw_class_name = (
-                model.names[class_id]
-            )
-
-            class_name = (
-                WILDLIFE_CLASSES.get(
-                    raw_class_name,
-                    raw_class_name,
-                )
-            )
+            raw_class_name = model.names[class_id]
+            class_name = WILDLIFE_CLASSES[raw_class_name]
 
             x1, y1, x2, y2 = (
                 int(value)
@@ -175,16 +153,8 @@ def analyze_image(image_path):
             detections.append(
                 {
                     "class_name": class_name,
-
-                    "raw_class_name": (
-                        raw_class_name
-                    ),
-
-                    "confidence": round(
-                        confidence * 100,
-                        2,
-                    ),
-
+                    "raw_class_name": raw_class_name,
+                    "confidence": round(confidence * 100, 2),
                     "x1": x1,
                     "y1": y1,
                     "x2": x2,
@@ -192,8 +162,7 @@ def analyze_image(image_path):
                 }
             )
 
-    # Ultralytics handles the model's
-    # output decoding and NMS.
+    # Generate the annotated image using Ultralytics.
     annotated_image = result.plot()
 
     RESULTS_DIR.mkdir(
@@ -201,15 +170,8 @@ def analyze_image(image_path):
         exist_ok=True,
     )
 
-    output_filename = (
-        f"{Path(image_path).stem}"
-        f"_detected.jpg"
-    )
-
-    annotated_image_path = (
-        RESULTS_DIR
-        / output_filename
-    )
+    output_filename = f"{Path(image_path).stem}_detected.jpg"
+    annotated_image_path = RESULTS_DIR / output_filename
 
     saved = cv2.imwrite(
         str(annotated_image_path),
@@ -218,39 +180,21 @@ def analyze_image(image_path):
 
     if not saved:
         raise OSError(
-            "The annotated image could "
-            "not be saved."
+            "The annotated image could not be saved."
         )
 
     return {
-        "filename": os.path.basename(
-            image_path
-        ),
-
+        "filename": os.path.basename(image_path),
         "width": width,
-
         "height": height,
-
         "channels": channels,
-
         "file_size_kb": round(
-            os.path.getsize(
-                image_path
-            ) / 1024,
+            os.path.getsize(image_path) / 1024,
             2,
         ),
-
         "grayscale": grayscale,
-
         "image": image,
-
         "detections": detections,
-
-        "detection_count": len(
-            detections
-        ),
-
-        "annotated_image_path": str(
-            annotated_image_path
-        ),
+        "detection_count": len(detections),
+        "annotated_image_path": str(annotated_image_path),
     }
