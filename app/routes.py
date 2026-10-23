@@ -512,7 +512,7 @@ def delete_media(media_id):
 
 
 # ---------------------------------------------------------
-# NEW: ANALYZE USING THE USER'S SELECTED ALGORITHM
+# ANALYZE USING THE USER'S SELECTED ALGORITHM
 # ---------------------------------------------------------
 
 @main.route("/analyze-selected/<int:media_id>", methods=["POST"])
@@ -554,6 +554,7 @@ def analyze_selected(media_id):
         # IMAGE ANALYSIS
         if media.file_type == "image":
 
+            # YOLO26n
             if algorithm == "YOLO26n":
                 result = analyze_image(stored_path)
 
@@ -586,26 +587,29 @@ def analyze_selected(media_id):
                     ),
                 )
 
+            # Classical OpenCV
             if algorithm == "Classical OpenCV":
                 result = analyze_classical_image(stored_path)
-                result_type = "classical"
-                result_url = None
+                selected = "classical"
+                feature_url = None
 
+            # SIFT
             elif algorithm == "SIFT":
                 result = analyze_sift_image(stored_path)
-                result_type = "sift"
+                selected = "sift"
 
-                result_url = url_for(
+                feature_url = url_for(
                     "main.view_feature_result",
                     media_id=media.id,
                     algorithm="sift",
                 )
 
+            # HOG
             else:
                 result = analyze_hog_image(stored_path)
-                result_type = "hog"
+                selected = "hog"
 
-                result_url = url_for(
+                feature_url = url_for(
                     "main.view_feature_result",
                     media_id=media.id,
                     algorithm="hog",
@@ -623,9 +627,9 @@ def analyze_selected(media_id):
                 "selected_image_analysis.html",
                 media=media,
                 algorithm=algorithm,
+                selected=selected,
                 analysis=result,
-                result_type=result_type,
-                result_url=result_url,
+                feature_url=feature_url,
                 grayscale_url=url_for(
                     "main.view_classical_result",
                     media_id=media.id,
@@ -638,7 +642,7 @@ def analyze_selected(media_id):
                 ),
             )
 
-        # VIDEO ANALYSIS
+        # VIDEO ANALYSIS: YOLO26n
         if algorithm == "YOLO26n":
             result = analyze_video(stored_path)
 
@@ -660,7 +664,7 @@ def analyze_selected(media_id):
                 ),
             )
 
-        # Classical video feature processing
+        # CLASSICAL VIDEO FEATURES
         result = analyze_video_features(stored_path)
 
         elapsed = round(
@@ -1122,17 +1126,11 @@ def view_video_comparison_result(media_id, algorithm):
     if media.file_type != "video":
         abort(404)
 
-    filenames = {
-        "edges": f"{Path(media.file_path).stem}_edges.mp4",
-        "sift": f"{Path(media.file_path).stem}_sift_features.mp4",
-        "hog": f"{Path(media.file_path).stem}_hog_features.mp4",
-    }
-
-    if algorithm not in filenames:
+    if algorithm not in {"edges", "sift", "hog"}:
         abort(404)
 
-    # Validate the upload path before deriving the output filename.
     _, stored_path = get_safe_media_path(media)
+
     filename = {
         "edges": f"{Path(stored_path).stem}_edges.mp4",
         "sift": f"{Path(stored_path).stem}_sift_features.mp4",
