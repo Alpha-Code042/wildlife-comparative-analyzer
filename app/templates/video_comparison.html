@@ -1,282 +1,146 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+{% extends "base.html" %}
 
-    <title>Video Algorithm Comparison | Wildlife Comparative Analyzer</title>
+{% block title %}Video Comparison | Wildlife Comparative Analyzer{% endblock %}
 
-    <style>
-      * {
-        box-sizing: border-box;
-      }
+{% block content %}
+<header class="topbar">
+    <div>
+        <h1 class="page-title">Video comparison</h1>
+        <p class="page-subtitle">Compare video processing methods for {{ media.filename }}</p>
+    </div>
+    <a class="btn btn-outline" href="{{ url_for('main.dashboard') }}">Back to dashboard</a>
+</header>
 
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f4f7f5;
-        color: #26352d;
-      }
+<div class="content-stack">
+    <div class="notice">
+        YOLO26n performs object detection. Classical video features visualize
+        edge and local feature information. Their outputs are different, so
+        processing speed alone does not establish which method is more accurate.
+    </div>
 
-      header {
-        background: #173d2b;
-        color: white;
-        padding: 24px 6%;
-      }
-
-      header h1 {
-        margin: 0 0 8px;
-      }
-
-      header p {
-        margin: 0;
-        color: #d5e6d9;
-      }
-
-      main {
-        width: min(1150px, 92%);
-        margin: 30px auto;
-      }
-
-      .panel,
-      .result-card {
-        background: white;
-        padding: 22px;
-        border-radius: 12px;
-        margin-bottom: 22px;
-        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.05);
-      }
-
-      .results-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 22px;
-      }
-
-      .result-card {
-        min-width: 0;
-      }
-
-      .result-card h2 {
-        margin-top: 0;
-        font-size: 20px;
-      }
-
-      video {
-        display: block;
-        width: 100%;
-        max-height: 360px;
-        background: #111;
-        border-radius: 8px;
-      }
-
-      .description {
-        color: #58675e;
-        line-height: 1.6;
-      }
-
-      .metric {
-        background: #f0f5f1;
-        padding: 14px;
-        margin-top: 12px;
-        border-radius: 8px;
-      }
-
-      .metric span {
-        display: block;
-        color: #607066;
-        font-size: 13px;
-        margin-bottom: 6px;
-      }
-
-      .metric strong {
-        font-size: 19px;
-        overflow-wrap: anywhere;
-      }
-
-      .notice {
-        line-height: 1.7;
-        border-left: 4px solid #648b6f;
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin: 24px 0;
-      }
-
-      .actions a {
-        display: inline-block;
-        padding: 12px 18px;
-        border-radius: 7px;
-        text-decoration: none;
-        font-weight: bold;
-        background: #237347;
-        color: white;
-      }
-
-      @media (max-width: 700px) {
-        .results-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <header>
-      <h1>Wildlife Comparative Analyzer</h1>
-      <p>Video algorithm comparison</p>
-    </header>
-
-    <main>
-      <section class="panel">
-        <h2>Video Comparison Results</h2>
-
-        <p>
-          <strong>Video:</strong>
-          {{ media.filename }}
-        </p>
-
-        <p>
-          The same uploaded video is processed using the available computer
-          vision methods.
-        </p>
-      </section>
-
-      <section class="results-grid">
+    <section class="results-grid">
         <article class="result-card">
-          <h2>YOLO Wildlife Detection</h2>
-
-          <video controls preload="metadata">
-            <source src="{{ yolo_video_url }}" type="video/mp4" />
-            Your browser does not support HTML video.
-          </video>
-
-          <p class="description">
-            YOLO detects wildlife classes supported by the configured model and
-            annotates detected objects.
-          </p>
-
-          <div class="metric">
-            <span>Processing time</span>
-            <strong>
-              {{ yolo_analysis.processing_time_seconds }} seconds
-            </strong>
-          </div>
-
-          <div class="metric">
-            <span>Processing speed</span>
-            <strong> {{ yolo_analysis.processing_fps }} FPS </strong>
-          </div>
+            <div class="result-content">
+                <h2 class="card-title">YOLO26n</h2>
+                <p class="card-description">Deep-learning object detection</p>
+            </div>
+            <div class="result-preview">
+                <video controls preload="metadata" style="width:100%;max-height:350px;">
+                    <source src="{{ yolo_video_url }}" type="video/mp4">
+                </video>
+            </div>
+            <div class="result-content">
+                <div class="metric">
+                    <strong>{{ yolo_analysis.processing_time_seconds }} s</strong>
+                    <span>Processing time</span>
+                </div>
+                <div class="metric" style="margin-top:10px;">
+                    <strong>{{ yolo_analysis.processing_fps }}</strong>
+                    <span>Processing FPS</span>
+                </div>
+            </div>
         </article>
 
         <article class="result-card">
-          <h2>OpenCV Edge Detection</h2>
+            <div class="result-content">
+                <h2 class="card-title">Classical video features</h2>
+                <p class="card-description">Canny edges, SIFT and HOG</p>
+            </div>
 
-          <video controls preload="metadata">
-            <source src="{{ edges_video_url }}" type="video/mp4" />
-            Your browser does not support HTML video.
-          </video>
+            <div class="result-content">
+                <strong>Edge features</strong>
+                <div class="result-preview" style="margin-top:10px;">
+                    <video controls preload="metadata" style="width:100%;max-height:240px;">
+                        <source src="{{ edges_video_url }}" type="video/mp4">
+                    </video>
+                </div>
 
-          <p class="description">
-            Canny edge detection highlights boundaries and intensity changes. It
-            does not identify animal species.
-          </p>
+                <strong style="display:block;margin-top:18px;">SIFT features</strong>
+                <div class="result-preview" style="margin-top:10px;">
+                    <video controls preload="metadata" style="width:100%;max-height:240px;">
+                        <source src="{{ sift_video_url }}" type="video/mp4">
+                    </video>
+                </div>
 
-          <div class="metric">
-            <span>Average edge-pixel percentage</span>
-            <strong>
-              {{ feature_analysis.average_edge_pixel_percentage }}%
-            </strong>
-          </div>
+                <strong style="display:block;margin-top:18px;">HOG features</strong>
+                <div class="result-preview" style="margin-top:10px;">
+                    <video controls preload="metadata" style="width:100%;max-height:240px;">
+                        <source src="{{ hog_video_url }}" type="video/mp4">
+                    </video>
+                </div>
+            </div>
+
+            <div class="result-content">
+                <div class="metric">
+                    <strong>{{ feature_analysis.processing_time_seconds }} s</strong>
+                    <span>Processing time</span>
+                </div>
+                <div class="metric" style="margin-top:10px;">
+                    <strong>{{ feature_analysis.processing_fps }}</strong>
+                    <span>Processing FPS</span>
+                </div>
+            </div>
         </article>
+    </section>
 
-        <article class="result-card">
-          <h2>SIFT Feature Extraction</h2>
+    <section class="card">
+        <h2 class="card-title">Classical feature metrics</h2>
 
-          <video controls preload="metadata">
-            <source src="{{ sift_video_url }}" type="video/mp4" />
-            Your browser does not support HTML video.
-          </video>
+        <div class="metric-grid">
+            <div class="metric">
+                <strong>{{ feature_analysis.processed_frames }}</strong>
+                <span>Processed frames</span>
+            </div>
+            <div class="metric">
+                <strong>{{ feature_analysis.average_edge_pixel_percentage }}%</strong>
+                <span>Average edge pixel percentage</span>
+            </div>
+            <div class="metric">
+                <strong>{{ feature_analysis.average_keypoints_per_frame }}</strong>
+                <span>Average SIFT keypoints per frame</span>
+            </div>
+            <div class="metric">
+                <strong>{{ feature_analysis.average_hog_features_per_frame }}</strong>
+                <span>Average HOG features per frame</span>
+            </div>
+        </div>
+    </section>
 
-          <p class="description">
-            SIFT extracts distinctive local keypoints from video frames. These
-            are features, not animal detections or individual-animal IDs.
-          </p>
+    <section class="card">
+        <h2 class="card-title">Benchmark summary</h2>
 
-          <div class="metric">
-            <span>Average keypoints per frame</span>
-            <strong>
-              {{ feature_analysis.average_keypoints_per_frame }}
-            </strong>
-          </div>
-        </article>
-
-        <article class="result-card">
-          <h2>HOG Feature Extraction</h2>
-
-          <video controls preload="metadata">
-            <source src="{{ hog_video_url }}" type="video/mp4" />
-            Your browser does not support HTML video.
-          </video>
-
-          <p class="description">
-            HOG represents gradient patterns in each frame. The displayed video
-            visualizes gradient magnitude.
-          </p>
-
-          <div class="metric">
-            <span>Average HOG feature-vector length</span>
-            <strong>
-              {{ feature_analysis.average_hog_features_per_frame }}
-            </strong>
-          </div>
-        </article>
-      </section>
-
-      <section class="panel">
-        <h2>Processing Summary</h2>
-
-        <div class="metric">
-          <span>Frames processed by OpenCV, SIFT and HOG</span>
-          <strong> {{ feature_analysis.processed_frames }} </strong>
+        <div style="overflow-x:auto;margin-top:12px;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Processing time (s)</th>
+                        <th>Processing FPS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>YOLO26n</td>
+                        <td>{{ yolo_analysis.processing_time_seconds }}</td>
+                        <td>{{ yolo_analysis.processing_fps }}</td>
+                    </tr>
+                    <tr>
+                        <td>Classical video features</td>
+                        <td>{{ feature_analysis.processing_time_seconds }}</td>
+                        <td>{{ feature_analysis.processing_fps }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <div class="metric">
-          <span>Feature-processing time</span>
-          <strong>
-            {{ feature_analysis.processing_time_seconds }} seconds
-          </strong>
-        </div>
-
-        <div class="metric">
-          <span>Feature-processing speed</span>
-          <strong> {{ feature_analysis.processing_fps }} FPS </strong>
-        </div>
-      </section>
-
-      <section class="panel notice">
-        <h2>Interpreting the Results</h2>
-
-        <p>
-          YOLO detection results and traditional feature-extraction results
-          measure different capabilities. SIFT keypoint counts, HOG
-          feature-vector lengths and edge-pixel percentages are not wildlife
-          detection accuracy measurements.
+        <p class="muted" style="margin-top:14px;">
+            The methods may process different operations per frame. Interpret
+            timing alongside the work performed and the number of frames processed.
         </p>
+    </section>
 
-        <p>
-          Processing speed depends on video resolution, hardware, model
-          inference time and the algorithms being evaluated. A fair benchmark
-          should use the same input video and consistent evaluation conditions.
-        </p>
-      </section>
-
-      <div class="actions">
-        <a href="{{ url_for('main.dashboard') }}"> Back to Dashboard </a>
-      </div>
-    </main>
-  </body>
-</html>
+    <div class="button-row">
+        <a class="btn" href="{{ url_for('main.dashboard') }}">Return to dashboard</a>
+    </div>
+</div>
+{% endblock %}

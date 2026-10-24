@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Wildlife Comparative Analyzer{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+{% block body %}
+<div class="page-shell">
+    <aside class="sidebar">
+        <a class="brand" href="{{ url_for('main.dashboard') }}">
+            <span class="brand-mark">W</span>
+            <span class="brand-name">
+                Wildlife Analyzer
+                <span class="brand-subtitle">Computer vision workspace</span>
+            </span>
+        </a>
+
+        <div class="nav-label">Workspace</div>
+        <nav class="side-nav">
+            <a href="{{ url_for('main.dashboard') }}"
+               class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                Dashboard
+            </a>
+            <a href="{{ url_for('main.upload_media') }}"
+               class="{% if request.endpoint == 'main.upload_media' %}active{% endif %}">
+                Upload media
+            </a>
+        </nav>
+
+        <div class="nav-label">Account</div>
+        <nav class="side-nav">
+            <a href="{{ url_for('main.logout') }}">Log out</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            Wildlife Comparative Analyzer<br>
+            Image and video benchmarking
+        </div>
+    </aside>
+
+    <main class="main-area">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-list">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}
+</body>
+</html>

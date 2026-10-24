@@ -1,374 +1,162 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Algorithm Comparison | Wildlife Comparative Analyzer</title>
+{% extends "base.html" %}
 
-    <style>
-      * {
-        box-sizing: border-box;
-      }
+{% block title %}Image Comparison | Wildlife Comparative Analyzer{% endblock %}
 
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f4f7f5;
-        color: #26352d;
-      }
+{% block content %}
+<header class="topbar">
+    <div>
+        <h1 class="page-title">Image algorithm comparison</h1>
+        <p class="page-subtitle">Comparative results for {{ media.filename }}</p>
+    </div>
+    <a class="btn btn-outline" href="{{ url_for('main.dashboard') }}">Back to dashboard</a>
+</header>
 
-      header {
-        background: #173d2b;
-        color: white;
-        padding: 24px 6%;
-      }
+<div class="content-stack">
+    <div class="notice">
+        Each method extracts or detects different information. Processing time,
+        feature counts and detection counts are not interchangeable accuracy measures.
+    </div>
 
-      header h1 {
-        margin: 0 0 8px;
-        font-size: 26px;
-      }
-
-      header p {
-        margin: 0;
-        color: #d5e6d9;
-      }
-
-      main {
-        width: min(1150px, 92%);
-        margin: 30px auto;
-      }
-
-      .intro,
-      .result-card,
-      .metrics-card,
-      .notice {
-        background: white;
-        border-radius: 12px;
-        padding: 22px;
-        margin-bottom: 22px;
-        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.05);
-      }
-
-      .intro h2,
-      .result-card h2,
-      .metrics-card h2 {
-        margin-top: 0;
-      }
-
-      .results-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 22px;
-      }
-
-      .result-card img {
-        display: block;
-        width: 100%;
-        max-height: 420px;
-        object-fit: contain;
-        background: #edf1ee;
-        border-radius: 8px;
-      }
-
-      .result-card p {
-        color: #58675e;
-        line-height: 1.6;
-      }
-
-      .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .metric {
-        background: #f0f5f1;
-        padding: 16px;
-        border-radius: 8px;
-      }
-
-      .metric span {
-        display: block;
-        color: #607066;
-        font-size: 14px;
-        margin-bottom: 8px;
-      }
-
-      .metric strong {
-        font-size: 21px;
-        overflow-wrap: anywhere;
-      }
-
-      .notice {
-        border-left: 4px solid #648b6f;
-        line-height: 1.7;
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin: 24px 0;
-      }
-
-      .actions a {
-        display: inline-block;
-        padding: 12px 18px;
-        border-radius: 7px;
-        text-decoration: none;
-        font-weight: bold;
-        background: #237347;
-        color: white;
-      }
-
-      .actions a.secondary {
-        background: #e2e9e4;
-        color: #26352d;
-      }
-
-      .result-link {
-        color: #237347;
-        font-weight: bold;
-      }
-
-      @media (max-width: 700px) {
-        .results-grid,
-        .metrics-grid {
-          grid-template-columns: 1fr;
-        }
-
-        header h1 {
-          font-size: 22px;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <header>
-      <h1>Wildlife Comparative Analyzer</h1>
-      <p>Compare traditional image processing with deep learning</p>
-    </header>
-
-    <main>
-      <section class="intro">
-        <h2>Image Algorithm Comparison</h2>
-
-        <p>
-          Compare wildlife detection, classical image processing,
-          and traditional feature-extraction methods using the same
-          uploaded image.
-        </p>
-
-        <p><strong>Image:</strong> {{ media.filename }}</p>
-      </section>
-
-      <section class="results-grid">
+    <section class="results-grid">
         <article class="result-card">
-          <h2>YOLO Wildlife Detection</h2>
-
-          <img
-            src="{{ yolo_image_url }}"
-            alt="Image annotated with YOLO wildlife detections"
-          />
-
-          <p>
-            YOLO identifies supported wildlife classes and marks
-            detected objects with bounding boxes.
-          </p>
-
-          <p>
-            <strong>Detections:</strong>
-            {{ yolo_analysis.detection_count }}
-          </p>
-
-          <p>
-            <strong>Processing time:</strong>
-            {{ yolo_time }} seconds
-          </p>
+            <div class="result-content">
+                <h2 class="card-title">YOLO26n</h2>
+                <p class="card-description">Deep-learning object detection</p>
+            </div>
+            <div class="result-preview">
+                <img src="{{ yolo_image_url }}" alt="YOLO26n detection result">
+            </div>
+            <div class="result-content">
+                <div class="metric">
+                    <strong>{{ yolo_analysis.detection_count }}</strong>
+                    <span>Detected objects</span>
+                </div>
+                <div class="metric" style="margin-top:10px;">
+                    <strong>{{ yolo_time }} s</strong>
+                    <span>Processing time</span>
+                </div>
+            </div>
         </article>
 
         <article class="result-card">
-          <h2>Traditional OpenCV Baseline</h2>
-
-          <img
-            src="{{ edges_url }}"
-            alt="Canny edge detection result"
-          />
-
-          <p>
-            Grayscale conversion and Canny edge detection highlight
-            image boundaries but do not identify animal species.
-          </p>
-
-          <p>
-            <strong>Processing time:</strong>
-            {{ classical_analysis.processing_time_seconds }} seconds
-          </p>
-
-          <p>
-            <strong>Edge pixels:</strong>
-            {{ classical_analysis.edge_pixel_percentage }}%
-          </p>
-
-          <p>
-            <a class="result-link" href="{{ grayscale_url }}">
-              View grayscale result
-            </a>
-          </p>
+            <div class="result-content">
+                <h2 class="card-title">Classical OpenCV</h2>
+                <p class="card-description">Grayscale conversion and edge detection</p>
+            </div>
+            <div class="result-preview">
+                <img src="{{ edges_url }}" alt="Classical OpenCV edge result">
+            </div>
+            <div class="result-content">
+                <div class="metric">
+                    <strong>{{ classical_analysis.edge_pixel_percentage }}%</strong>
+                    <span>Edge pixel percentage</span>
+                </div>
+                <div class="metric" style="margin-top:10px;">
+                    <strong>{{ classical_time }} s</strong>
+                    <span>Processing time</span>
+                </div>
+                <p class="muted" style="margin-top:12px;">
+                    <a href="{{ grayscale_url }}" target="_blank" rel="noopener">View grayscale output</a>
+                </p>
+            </div>
         </article>
 
         <article class="result-card">
-          <h2>SIFT Feature Extraction</h2>
-
-          <img
-            src="{{ sift_image_url }}"
-            alt="SIFT keypoints drawn on the wildlife image"
-          />
-
-          <p>
-            SIFT identifies distinctive local image features.
-            The markers indicate extracted keypoints. SIFT does
-            not independently classify wildlife.
-          </p>
-
-          <p>
-            <strong>Keypoints:</strong>
-            {{ sift_analysis.keypoint_count }}
-          </p>
-
-          <p>
-            <strong>Descriptors:</strong>
-            {{ sift_analysis.descriptor_count }}
-          </p>
-
-          <p>
-            <strong>Descriptor dimensions:</strong>
-            {{ sift_analysis.descriptor_dimensions }}
-          </p>
-
-          <p>
-            <strong>Processing time:</strong>
-            {{ sift_analysis.processing_time_seconds }} seconds
-          </p>
+            <div class="result-content">
+                <h2 class="card-title">SIFT</h2>
+                <p class="card-description">Scale-Invariant Feature Transform</p>
+            </div>
+            <div class="result-preview">
+                <img src="{{ sift_image_url }}" alt="SIFT keypoint output">
+            </div>
+            <div class="result-content">
+                <div class="metric">
+                    <strong>{{ sift_analysis.keypoint_count }}</strong>
+                    <span>Keypoints</span>
+                </div>
+                <div class="metric" style="margin-top:10px;">
+                    <strong>{{ sift_analysis.descriptor_count }}</strong>
+                    <span>Descriptors</span>
+                </div>
+                <div class="metric" style="margin-top:10px;">
+                    <strong>{{ sift_time }} s</strong>
+                    <span>Processing time</span>
+                </div>
+                <p class="muted" style="margin-top:12px;">
+                    Descriptor dimensions: {{ sift_analysis.descriptor_dimensions }}
+                </p>
+            </div>
         </article>
 
         <article class="result-card">
-          <h2>HOG Feature Extraction</h2>
-
-          <img
-            src="{{ hog_image_url }}"
-            alt="Gradient magnitude visualization for HOG analysis"
-          />
-
-          <p>
-            HOG describes image structure through gradient patterns.
-            This image visualizes gradient magnitude; it is not
-            a wildlife detection result.
-          </p>
-
-          <p>
-            <strong>Feature-vector length:</strong>
-            {{ hog_analysis.feature_vector_length }}
-          </p>
-
-          <p>
-            <strong>Processing time:</strong>
-            {{ hog_analysis.processing_time_seconds }} seconds
-          </p>
+            <div class="result-content">
+                <h2 class="card-title">HOG</h2>
+                <p class="card-description">Histogram of Oriented Gradients</p>
+            </div>
+            <div class="result-preview">
+                <img src="{{ hog_image_url }}" alt="HOG feature output">
+            </div>
+            <div class="result-content">
+                <div class="metric">
+                    <strong>{{ hog_analysis.feature_vector_length }}</strong>
+                    <span>Feature vector length</span>
+                </div>
+                <div class="metric" style="margin-top:10px;">
+                    <strong>{{ hog_time }} s</strong>
+                    <span>Processing time</span>
+                </div>
+            </div>
         </article>
-      </section>
+    </section>
 
-      <section class="metrics-card">
-        <h2>Performance Summary</h2>
-
-        <div class="metrics-grid">
-          <div class="metric">
-            <span>YOLO processing time</span>
-            <strong>{{ yolo_time }} s</strong>
-          </div>
-
-          <div class="metric">
-            <span>OpenCV baseline time</span>
-            <strong>
-              {{ classical_analysis.processing_time_seconds }} s
-            </strong>
-          </div>
-
-          <div class="metric">
-            <span>YOLO detections</span>
-            <strong>{{ yolo_analysis.detection_count }}</strong>
-          </div>
-
-          <div class="metric">
-            <span>SIFT keypoints</span>
-            <strong>{{ sift_analysis.keypoint_count }}</strong>
-          </div>
-
-          <div class="metric">
-            <span>HOG feature-vector length</span>
-            <strong>{{ hog_analysis.feature_vector_length }}</strong>
-          </div>
-
-          <div class="metric">
-            <span>SIFT processing time</span>
-            <strong>
-              {{ sift_analysis.processing_time_seconds }} s
-            </strong>
-          </div>
-
-          <div class="metric">
-            <span>HOG processing time</span>
-            <strong>
-              {{ hog_analysis.processing_time_seconds }} s
-            </strong>
-          </div>
+    <section class="card">
+        <h2 class="card-title">Comparison summary</h2>
+        <div style="overflow-x:auto;margin-top:12px;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Processing time (s)</th>
+                        <th>Reported measurement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>YOLO26n</td>
+                        <td>{{ yolo_time }}</td>
+                        <td>{{ yolo_analysis.detection_count }} detections</td>
+                    </tr>
+                    <tr>
+                        <td>Classical OpenCV</td>
+                        <td>{{ classical_time }}</td>
+                        <td>{{ classical_analysis.edge_pixel_percentage }}% edge pixels</td>
+                    </tr>
+                    <tr>
+                        <td>SIFT</td>
+                        <td>{{ sift_time }}</td>
+                        <td>{{ sift_analysis.keypoint_count }} keypoints</td>
+                    </tr>
+                    <tr>
+                        <td>HOG</td>
+                        <td>{{ hog_time }}</td>
+                        <td>{{ hog_analysis.feature_vector_length }} features</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-      </section>
-
-      <section class="notice">
-        <strong>How to interpret these results</strong>
-
-        <p>
-          YOLO produces wildlife detections for classes supported
-          by the configured model. The classical OpenCV baseline
-          produces grayscale and edge images without species
-          classification.
+        <p class="muted" style="margin-top:14px;">
+            The measurements above describe processing behaviour and extracted features.
+            A formal accuracy evaluation requires labelled ground-truth data and suitable
+            metrics such as precision, recall, or mean average precision.
         </p>
+    </section>
 
-        <p>
-          SIFT extracts local keypoints and descriptors, while HOG
-          represents gradient patterns numerically. Their feature
-          counts and vector lengths are not wildlife detection
-          accuracy measurements.
-        </p>
-
-        <p>
-          Processing times are measurements from this run. They can
-          vary with hardware, image size, and model-loading overhead.
-          They should not be treated as a controlled benchmark yet.
-        </p>
-
-        <p>
-          Edge-pixel percentage is an image statistic, not detection
-          accuracy. Accuracy, precision, recall, and F1-score require
-          suitable ground-truth annotations and a consistent
-          evaluation procedure.
-        </p>
-      </section>
-
-      <div class="actions">
-        <a href="{{ url_for('main.dashboard') }}">
-          Back to Dashboard
+    <div class="button-row">
+        <a class="btn" href="{{ url_for('main.dashboard') }}">Return to dashboard</a>
+        <a class="btn btn-outline"
+           href="{{ url_for('main.analyze_media', media_id=media.id) }}">
+            Run YOLO analysis again
         </a>
-
-        <a
-          class="secondary"
-          href="{{ url_for('main.analyze_media', media_id=media.id) }}"
-        >
-          View YOLO Analysis
-        </a>
-      </div>
-    </main>
-  </body>
-</html>
+    </div>
+</div>
+{% endblock %}

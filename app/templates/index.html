@@ -1,129 +1,68 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Wildlife Comparative Analyzer</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
-    >
-
-    <style>
-        .welcome {
-            max-width: 760px;
-            margin: 70px auto;
-            padding: 48px 28px;
-            text-align: center;
-            background: #ffffff;
-            border: 1px solid #e2e8e2;
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-        }
-
-        .welcome h2 {
-            margin-top: 0;
-            font-size: 2rem;
-            color: #245c3a;
-        }
-
-        .welcome > p {
-            line-height: 1.8;
-            color: #5b665e;
-        }
-
-        .welcome .get-started-btn {
-            display: inline-block;
-            margin: 22px 0;
-            padding: 14px 30px;
-            background: #267346;
-            color: #ffffff;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            border-radius: 8px;
-            border: 2px solid #267346;
-            transition: background 0.2s ease,
-                        transform 0.2s ease;
-        }
-
-        .welcome .get-started-btn:hover {
-            background: #1b5734;
-            border-color: #1b5734;
-            transform: translateY(-2px);
-        }
-
-        .welcome .get-started-btn:focus-visible {
-            outline: 3px solid #91c9a3;
-            outline-offset: 4px;
-        }
-
-        .welcome .login-prompt {
-            margin-top: 10px;
-            font-size: 0.95rem;
-        }
-
-        .welcome .login-prompt a {
-            color: #267346;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .welcome .login-prompt a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 600px) {
-            .welcome {
-                margin: 35px 16px;
-                padding: 35px 20px;
-            }
-
-            .welcome h2 {
-                font-size: 1.7rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
-
-    <header>
-        <h1>Wildlife Comparative Analyzer</h1>
-
-        <p>
-            Computer vision analysis and algorithm comparison
-            for wildlife camera trap footage.
-        </p>
-    </header>
-
-    <main>
-        <section class="welcome">
-            <h2>Welcome</h2>
-
-            <p>
-                Upload wildlife images or videos and compare
-                selected computer vision methods.
-            </p>
-
-            <a
-                href="{{ url_for('main.register') }}"
-                class="get-started-btn"
-            >
-                Get Started
+    <main class="hero-layout">
+        <section class="hero-copy">
+            <a class="brand" href="{{ url_for('main.home') }}" style="padding:0;">
+                <span class="brand-mark">W</span>
+                <span class="brand-name" style="color:#14213d;">
+                    Wildlife Analyzer
+                    <span class="brand-subtitle" style="color:#718096;">Computer vision workspace</span>
+                </span>
             </a>
 
-            <p class="login-prompt">
-                Already have an account?
-                <a href="{{ url_for('main.login') }}">Log in</a>
-            </p>
+            <div style="margin-top:45px;">
+                <span class="hero-eyebrow">WILDLIFE COMPUTER VISION</span>
+                <h1>Analyze wildlife footage.<br><span>Compare algorithms.</span></h1>
+                <p>
+                    Computer vision analysis and algorithm comparison for
+                    wildlife camera trap footage. Upload images or videos,
+                    examine visual features, and compare processing results
+                    in one workspace.
+                </p>
+
+                <div class="button-row">
+                    <a class="btn" href="{{ url_for('main.register') }}">Get Started</a>
+                    <a class="btn btn-outline" href="{{ url_for('main.login') }}">Log In</a>
+                </div>
+
+                <p class="muted" style="margin-top:24px;font-size:12px;">
+                    Built for wildlife research, computer vision experimentation,
+                    and algorithm benchmarking.
+                </p>
+            </div>
+        </section>
+
+        <section class="hero-visual">
+            <img
+                src="https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1100&q=85"
+                alt="Lion in a natural wildlife environment"
+            >
+            <div class="hero-visual-caption">
+                <strong>Wildlife image analysis</strong>
+                <span>Explore detection results and traditional computer vision features.</span>
+            </div>
+            <div class="metric-grid">
+                <div class="metric">
+                    <strong>YOLO</strong>
+                    <span>Object detection</span>
+                </div>
+                <div class="metric">
+                    <strong>SIFT</strong>
+                    <span>Feature detection</span>
+                </div>
+                <div class="metric">
+                    <strong>HOG</strong>
+                    <span>Feature description</span>
+                </div>
+            </div>
         </section>
     </main>
-
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
 </body>
 </html>

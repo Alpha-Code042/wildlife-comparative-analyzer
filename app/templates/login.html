@@ -1,86 +1,67 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Login | Wildlife Comparative Analyzer</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
-    >
+    <title>Log In | Wildlife Comparative Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
+    <main class="auth-page">
+        <section class="auth-card">
+            <div class="auth-brand">
+                <div class="brand-mark">W</div>
+                <h1 style="margin-top:14px;">Welcome back</h1>
+                <p class="auth-intro">Log in to your wildlife analysis workspace.</p>
+            </div>
 
-    <header>
-        <h1>Wildlife Comparative Analyzer</h1>
-        <p>Sign in to access your workspace</p>
-    </header>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-list">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-    <main>
-        <section class="welcome">
+            <form method="POST" action="{{ url_for('main.login') }}" class="form-stack">
+                <div class="form-field">
+                    <label class="field-label" for="email">Email address</label>
+                    <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="you@example.com"
+                        required
+                    >
+                </div>
 
-            <h2>Welcome Back</h2>
+                <div class="form-field">
+                    <label class="field-label" for="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        autocomplete="current-password"
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
 
-            <p>
-                Log in to continue analyzing wildlife images
-                and videos.
-            </p>
-
-            <form method="POST" action="{{ url_for('main.login') }}">
-
-                <label for="email">Email Address</label>
-
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    autocomplete="email"
-                    required
-                >
-
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% for category, message in messages %}
-                        {% if category == "error" %}
-                            <div class="error-message" role="alert">
-                                {{ message }}
-                            </div>
-                        {% elif category == "success" %}
-                            <div class="success-message" role="status">
-                                {{ message }}
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                {% endwith %}
-
-                <label for="password">Password</label>
-
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    autocomplete="current-password"
-                    required
-                >
-
-                <button type="submit">Login</button>
-
+                <button type="submit" style="width:100%;margin-top:5px;">Log In</button>
             </form>
 
-            <p style="margin-top: 20px; margin-bottom: 0;">
+            <p class="auth-footer">
                 Don't have an account?
-                <a href="{{ url_for('main.register') }}">
-                    Create an account
-                </a>
+                <a href="{{ url_for('main.register') }}">Create an account</a>
             </p>
 
+            <p class="footer-note">
+                <a href="{{ url_for('main.home') }}">Back to home</a>
+            </p>
         </section>
     </main>
-
 </body>
 </html>
