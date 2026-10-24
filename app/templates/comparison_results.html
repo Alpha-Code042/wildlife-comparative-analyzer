@@ -1,0 +1,136 @@
+
+{% extends "base.html" %}
+
+{% block title %}Comparison Results | Wildlife Comparative Analyzer{% endblock %}
+
+{% block content %}
+<div class="container results-page">
+    <header class="results-header">
+        <h1>Comparison Results</h1>
+        <p>Side-by-side results for {{ media.filename }}</p>
+
+        <a class="btn btn-secondary"
+           href="{{ url_for('main.dashboard') }}">
+            Back to Dashboard
+        </a>
+    </header>
+
+    <section class="results-card">
+        <h2>Processing Summary</h2>
+
+        <p><strong>Media file:</strong> {{ media.filename }}</p>
+        <p><strong>Media type:</strong> {{ media.file_type|title }}</p>
+        <p><strong>Methods recorded:</strong> {{ comparisons|length }}</p>
+        <p><strong>Comparison ID:</strong> {{ comparison_id }}</p>
+
+        {% if comparisons and comparisons|selectattr('job.status', 'equalto', 'completed')|list|length == comparisons|length %}
+            <p><strong>Status:</strong> Completed</p>
+        {% else %}
+            <p><strong>Status:</strong> Incomplete — one or more methods did not complete.</p>
+        {% endif %}
+    </section>
+
+    <section class="results-card">
+        <h2>Performance Comparison</h2>
+
+        <div style="overflow-x:auto;">
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>Processing time (seconds)</th>
+                        <th>FPS</th>
+                        <th>Status</th>
+                        <th>Individual result</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for item in comparisons %}
+                    <tr>
+                        <td>{{ item.job.algorithm }}</td>
+
+                        <td>
+                            {% if item.processing_time is not none %}
+                                {{ "%.4f"|format(item.processing_time) }}
+                            {% else %}
+                                Not recorded
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if item.fps is not none %}
+                                {{ "%.2f"|format(item.fps) }}
+                            {% else %}
+                                Not available
+                            {% endif %}
+                        </td>
+
+                        <td>{{ item.job.status|title }}</td>
+
+                        <td>
+                            {% if item.job.status == "completed" %}
+                                <a href="{{ url_for('main.saved_result', job_id=item.job.id) }}">
+                                    View details
+                                </a>
+                            {% else %}
+                                Not available
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="card-description">
+            Only recorded metrics are shown. Processing time and FPS do not
+            independently establish detection accuracy.
+        </p>
+    </section>
+
+    {% for item in comparisons %}
+    <section class="results-card">
+        <h2>{{ item.job.algorithm }}</h2>
+
+        {% if item.job.status == "completed" %}
+
+            <h3>Available output</h3>
+
+            {% if item.output_links %}
+                <ul>
+                    {% for output in item.output_links %}
+                    <li>
+                        <a href="{{ output.url }}">{{ output.label }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No generated output file is available for this method.</p>
+            {% endif %}
+
+            <h3>Saved analysis data</h3>
+
+            {% if item.result %}
+                <pre style="white-space:pre-wrap; overflow-wrap:anywhere;">{{ item.result|tojson(indent=2) }}</pre>
+            {% else %}
+                <p>No saved analysis data is available.</p>
+            {% endif %}
+
+            <p>
+                <a class="btn btn-secondary"
+                   href="{{ url_for('main.download_report', job_id=item.job.id) }}">
+                    Download individual PDF report
+                </a>
+            </p>
+
+        {% else %}
+            <p>
+                This method did not complete successfully. Its result and
+                performance metrics may be unavailable.
+            </p>
+        {% endif %}
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

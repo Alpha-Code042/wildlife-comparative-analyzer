@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}Dashboard | Wildlife Comparative Analyzer{% endblock %}
@@ -24,15 +25,17 @@
         </div>
 
         <div class="stat-card">
-            <div class="stat-label">Image algorithms</div>
-            <div class="stat-value">4</div>
-            <div class="stat-note">YOLO26n, Classical OpenCV, SIFT and HOG</div>
+            <div class="stat-label">Completed analyses</div>
+            <div class="stat-value">
+                {{ processing_jobs|selectattr('status', 'equalto', 'completed')|list|length }}
+            </div>
+            <div class="stat-note">Saved processing results</div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-label">Video methods</div>
-            <div class="stat-value">2</div>
-            <div class="stat-note">YOLO26n and Classical Video Features</div>
+            <div class="stat-label">Saved comparisons</div>
+            <div class="stat-value">{{ comparison_history|length }}</div>
+            <div class="stat-note">Image and video comparisons</div>
         </div>
     </section>
 
@@ -152,6 +155,141 @@
                 <h3>Your media library is empty</h3>
                 <p>Upload a wildlife image or video to begin your first analysis.</p>
                 <a class="btn" href="{{ url_for('main.upload_media') }}">Upload your first file</a>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- SAVED COMPARISON HISTORY -->
+    <section class="card">
+        <div style="margin-bottom:20px;">
+            <h2 class="card-title">Saved comparison history</h2>
+            <p class="card-description">
+                Reopen previous image and video comparisons, including comparisons
+                that did not finish successfully.
+            </p>
+        </div>
+
+        {% if comparison_history %}
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; text-align:left;">
+                    <thead>
+                        <tr>
+                            <th style="padding:12px;">File</th>
+                            <th style="padding:12px;">Media type</th>
+                            <th style="padding:12px;">Methods</th>
+                            <th style="padding:12px;">Started</th>
+                            <th style="padding:12px;">Status</th>
+                            <th style="padding:12px;">Results</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comparison in comparison_history %}
+                            <tr style="border-top:1px solid var(--border-color, #e5e7eb);">
+                                <td style="padding:12px;">
+                                    {% if comparison.media %}
+                                        {{ comparison.media.filename }}
+                                    {% else %}
+                                        Media unavailable
+                                    {% endif %}
+                                </td>
+
+                                <td style="padding:12px;">
+                                    {% if comparison.media %}
+                                        {{ comparison.media.file_type|title }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+
+                                <td style="padding:12px;">
+                                    {{ comparison.algorithms|join(', ') }}
+                                </td>
+
+                                <td style="padding:12px;">
+                                    {{ comparison.started_at.strftime('%Y-%m-%d %H:%M') if comparison.started_at else '—' }}
+                                </td>
+
+                                <td style="padding:12px;">
+                                    <span class="type-badge">
+                                        {{ comparison.status|title }}
+                                    </span>
+                                </td>
+
+                                <td style="padding:12px;">
+                                    <a class="btn btn-outline btn-small"
+                                       href="{{ url_for('main.saved_comparison', comparison_id=comparison.comparison_id) }}">
+                                        View comparison
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No saved comparisons yet</h3>
+                <p>
+                    Use the comparison buttons in your media library. Each comparison
+                    will appear here so you can reopen its results later.
+                </p>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- INDIVIDUAL PROCESSING HISTORY -->
+    <section class="card">
+        <div style="margin-bottom:20px;">
+            <h2 class="card-title">Processing history</h2>
+            <p class="card-description">
+                Reopen previous analyses and download their reports.
+            </p>
+        </div>
+
+        {% if processing_jobs %}
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; text-align:left;">
+                    <thead>
+                        <tr>
+                            <th style="padding:12px;">File</th>
+                            <th style="padding:12px;">Method</th>
+                            <th style="padding:12px;">Status</th>
+                            <th style="padding:12px;">Completed</th>
+                            <th style="padding:12px;">Results</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in processing_jobs %}
+                            <tr style="border-top:1px solid var(--border-color, #e5e7eb);">
+                                <td style="padding:12px;">
+                                    {{ job.media.filename if job.media else 'Media unavailable' }}
+                                </td>
+                                <td style="padding:12px;">{{ job.algorithm }}</td>
+                                <td style="padding:12px;">
+                                    <span class="type-badge">{{ job.status|title }}</span>
+                                </td>
+                                <td style="padding:12px;">
+                                    {{ job.completed_at.strftime('%Y-%m-%d %H:%M') if job.completed_at else '—' }}
+                                </td>
+                                <td style="padding:12px;">
+                                    {% if job.status == 'completed' and job.result_data %}
+                                        <a class="btn btn-outline btn-small"
+                                           href="{{ url_for('main.saved_result', job_id=job.id) }}">
+                                            View results
+                                        </a>
+                                    {% else %}
+                                        <span class="media-meta">Unavailable</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No processing history yet</h3>
+                <p>Your completed analyses will appear here.</p>
             </div>
         {% endif %}
     </section>

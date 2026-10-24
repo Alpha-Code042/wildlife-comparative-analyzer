@@ -112,6 +112,19 @@ class ProcessingJob(db.Model):
     started_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
 
+    # Stores the algorithm's saved output as JSON.
+    result_data = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    # Groups jobs created during the same comparison run.
+    # Individual analyses and older jobs may have NULL here.
+    comparison_id = db.Column(
+        db.String(36),
+        nullable=True
+    )
+
 
 class AlgorithmBenchmark(db.Model):
     __tablename__ = "algorithm_benchmarks"
@@ -148,3 +161,4 @@ class AlgorithmBenchmark(db.Model):
             uselist=False
         )
     )
+

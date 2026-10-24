@@ -1,0 +1,96 @@
+
+{% extends "base.html" %}
+
+{% block title %}Saved Analysis Results{% endblock %}
+
+{% block content %}
+<div class="container results-page">
+    <div class="results-header">
+        <h1>Analysis Results</h1>
+        <p>Saved results for your wildlife computer vision analysis.</p>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <section class="results-card">
+        <h2>Processing Information</h2>
+        <p><strong>Media file:</strong> {{ media.filename }}</p>
+        <p><strong>Media type:</strong> {{ media.file_type|title }}</p>
+        <p><strong>Algorithm:</strong> {{ job.algorithm }}</p>
+        <p><strong>Status:</strong> {{ job.status|title }}</p>
+        <p><strong>Started:</strong> {{ job.started_at or 'Not recorded' }}</p>
+        <p><strong>Completed:</strong> {{ job.completed_at or 'Not recorded' }}</p>
+    </section>
+
+    {% if metrics %}
+    <section class="results-card">
+        <h2>Available Performance Metrics</h2>
+        {% for metric in metrics %}
+        <p><strong>{{ metric.label }}:</strong> {{ metric.value }}</p>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if output_links %}
+    <section class="results-card">
+        <h2>Processed Output</h2>
+        {% for output in output_links %}
+        <p>
+            <a href="{{ output.url }}">{{ output.label }}</a>
+        </p>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <section class="results-card">
+        <h2>Analysis Details</h2>
+
+        {% if result_items %}
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in result_items %}
+                <tr>
+                    <td>{{ item.label }}</td>
+                    <td>
+                        {% if item.value is mapping or
+                              (item.value is sequence and item.value is not string) %}
+                            <pre>{{ item.value | tojson(indent=2) }}</pre>
+                        {% elif item.value is none %}
+                            Not available
+                        {% else %}
+                            {{ item.value }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No saved analysis details are available.</p>
+        {% endif %}
+    </section>
+
+    <section class="results-card">
+        <h2>Download Results</h2>
+        <p>
+            <a class="btn btn-primary"
+               href="{{ url_for('main.download_report', job_id=job.id) }}">
+                Download PDF Report
+            </a>
+        </p>
+        <p>
+            <a class="btn btn-secondary"
+               href="{{ url_for('main.download_result', job_id=job.id) }}">
+                Download Processed Output
+            </a>
+        </p>
+    </section>
+</div>
+{% endblock %}
